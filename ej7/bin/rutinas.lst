@@ -1,0 +1,22 @@
+     1                                  GLOBAL CARGAR_TABLA
+     2                                  
+     3                                  EXTERN _CONTADOR_TABLA
+     4                                  
+     5                                  
+     6                                  section .rutinas
+     7                                  USE32
+     8                                  
+     9                                  
+    10                                  CARGAR_TABLA:
+    11                                  
+    12 00000000 89E5                        mov ebp, esp  
+    13 00000002 8A4504                      mov al, [ebp + 4]
+    14 00000005 8B0D[00000000]              mov ecx, [_CONTADOR_TABLA]     ;Cargo valor del contador en .datos
+    15 0000000B 8801                        mov [ecx], al                  ;Guardo la tecla, en la pocision de memoria
+    16                                                                     ; de la tabla, indicada por el contador
+    17 0000000D 41                          inc ecx
+    18                                      
+    19 0000000E 890D[00000000]              mov [_CONTADOR_TABLA], ecx     ;Guardo el valor del contador incrementado
+    20 00000014 C3                          ret                            ;para apiuntar al siguiente digito de la tabla
+    21                                  
+    22                                  

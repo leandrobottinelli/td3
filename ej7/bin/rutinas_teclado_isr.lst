@@ -1,0 +1,198 @@
+     1                                  GLOBAL isr0_handler_DE
+     2                                  GLOBAL isr1_handler_DB
+     3                                  GLOBAL isr2_handler_NMI
+     4                                  GLOBAL isr3_handler_BP
+     5                                  GLOBAL isr4_handler_OF
+     6                                  GLOBAL isr5_handler_BR
+     7                                  GLOBAL isr6_handler_UD
+     8                                  GLOBAL isr7_handler_NM
+     9                                  GLOBAL isr8_handler_DF
+    10                                  GLOBAL isr9_handler
+    11                                  GLOBAL isr10_handler_TS
+    12                                  GLOBAL isr11_handler_NP
+    13                                  GLOBAL isr12_handler_SS
+    14                                  GLOBAL isr13_handler_GP
+    15                                  GLOBAL isr14_handler_PF
+    16                                  GLOBAL isr15_handler
+    17                                  GLOBAL isr16_handler_MF
+    18                                  GLOBAL isr17_handler_AC
+    19                                  GLOBAL isr18_handler_MC
+    20                                  GLOBAL isr19_handler_XF
+    21                                  GLOBAL isr20_31_handler
+    22                                  
+    23                                  
+    24                                  GLOBAL POLLING
+    25                                  
+    26                                  EXTERN FIN_POLLING
+    27                                  EXTERN CARGAR_TABLA
+    28                                  EXTERN __INICIO_RAM_TECLADO_RUTINA
+    29                                  
+    30                                  %define _PUERTO_TECLADO  0x64;
+    31                                  %define _PUERTO_TECLADO_CODIGO 0x60;
+    32                                  ;-------------------------------------------------------------------------------
+    33                                  
+    34                                  section .rutina_teclado_isr
+    35                                  USE32
+    36                                  
+    37                                  POLLING:
+    38                                  
+    39 00000000 E464                    in al, _PUERTO_TECLADO 
+    40 00000002 0FBAE000                bt eax, 0x00
+    41 00000006 73F8                    jnc POLLING
+    42                                  
+    43                                  
+    44 00000008 E460                    in al, _PUERTO_TECLADO_CODIGO
+    45 0000000A 660FBAE007              bt ax, 0x7
+    46                                  
+    47 0000000F 6687DB                  xchg bx,bx
+    48 00000012 3C1F                    cmp al, 0x1F		;Si detecto que la tecla fue "s" termino el programa
+    49 00000014 0F84(00000000)          jz FIN_POLLING
+    50                                  
+    51                                  
+    52 0000001A EB00                    jmp CARGADO_TABLA
+    53                                  
+    54                                  
+    55                                  CARGADO_TABLA:
+    56                                  
+    57 0000001C 6650                    push ax
+    58 0000001E E8(00000000)            call CARGAR_TABLA
+    59 00000023 6658                    pop ax
+    60 00000025 C3                      ret
+    61                                  
+    62                                  
+    63                                  ;---------------------------------------------------------------------
+    64                                  ; Handlers ISRs
+    65                                  
+    66                                  default_isr:
+    67 00000026 90                         nop
+    68 00000027 6687DB                     xchg bx,bx
+    69 0000002A 90                         nop
+    70 0000002B F4                         hlt
+    71                                  
+    72                                  
+    73                                  isr0_handler_DE:
+    74 0000002C BA00000000                 mov edx, 0
+    75 00000031 EBF3                       jmp default_isr
+    76                                  
+    77                                  isr1_handler_DB:
+    78 00000033 BA01000000                 mov edx, 1
+    79 00000038 EBEC                       jmp default_isr
+    80                                  
+    81                                  
+    82                                  isr2_handler_NMI:
+    83 0000003A BA02000000                 mov edx, 2
+    84 0000003F EBE5                       jmp default_isr
+    85                                  
+    86                                  
+    87                                  isr3_handler_BP:
+    88 00000041 BA03000000                 mov edx, 3
+    89 00000046 EBDE                       jmp default_isr
+    90                                  
+    91                                  
+    92                                  isr4_handler_OF:
+    93 00000048 BA04000000                 mov edx, 4
+    94 0000004D EBD7                       jmp default_isr
+    95                                  
+    96                                  
+    97                                  isr5_handler_BR:
+    98 0000004F BA05000000                 mov edx, 5
+    99 00000054 EBD0                       jmp default_isr
+   100                                  
+   101                                  
+   102                                  isr6_handler_UD:
+   103 00000056 BA06000000                 mov edx, 6
+   104 0000005B EBC9                       jmp default_isr
+   105                                  
+   106                                  
+   107                                  isr7_handler_NM:
+   108 0000005D BA07000000                 mov edx, 7
+   109 00000062 EBC2                       jmp default_isr
+   110                                  
+   111                                  
+   112                                  isr8_handler_DF:
+   113 00000064 BA08000000                 mov edx, 8
+   114 00000069 EBBB                       jmp default_isr
+   115                                  
+   116                                  isr9_handler:
+   117 0000006B BA09000000                 mov edx, 9
+   118 00000070 EBB4                       jmp default_isr
+   119                                  
+   120                                  
+   121                                  isr10_handler_TS:
+   122 00000072 BA0A000000                 mov edx, 10
+   123 00000077 EBAD                       jmp default_isr
+   124                                  
+   125                                  
+   126                                  isr11_handler_NP:
+   127 00000079 BA0B000000                 mov edx, 11
+   128 0000007E EBA6                       jmp default_isr
+   129                                  
+   130                                  
+   131                                  isr12_handler_SS:
+   132 00000080 BA0C000000                 mov edx, 12
+   133 00000085 EB9F                       jmp default_isr
+   134                                  
+   135                                  
+   136                                  isr13_handler_GP:
+   137 00000087 BA0D000000                 mov edx, 13
+   138 0000008C EB98                       jmp default_isr
+   139                                  
+   140                                  
+   141                                  isr14_handler_PF:
+   142 0000008E BA0E000000                 mov edx, 14
+   143 00000093 EB91                       jmp default_isr
+   144                                  
+   145                                  isr15_handler:
+   146 00000095 BA0F000000                 mov edx, 15
+   147 0000009A EB8A                       jmp default_isr
+   148                                  
+   149                                  isr16_handler_MF:
+   150 0000009C BA10000000                 mov edx, 16
+   151 000000A1 EB83                       jmp default_isr
+   152                                  
+   153                                  
+   154                                  isr17_handler_AC:
+   155 000000A3 BA11000000                 mov edx, 17
+   156 000000A8 E979FFFFFF                 jmp default_isr
+   157                                  
+   158                                  
+   159                                  isr18_handler_MC:
+   160 000000AD BA12000000                 mov edx, 18
+   161 000000B2 E96FFFFFFF                 jmp default_isr
+   162                                  
+   163                                  
+   164                                  isr19_handler_XF:
+   165 000000B7 BA13000000                 mov edx, 19
+   166 000000BC E965FFFFFF                 jmp default_isr
+   167                                  
+   168                                  
+   169                                  isr20_31_handler:
+   170 000000C1 BA14000000                 mov edx, 20
+   171 000000C6 E95BFFFFFF                 jmp default_isr
+   172                                  
+   173                                  
+   174                                  isr32_47_handler:
+   175 000000CB BA20000000                 mov edx, 32
+   176 000000D0 E951FFFFFF                 jmp default_isr
+   177                                  
+   178                                  
+   179                                  
+   180                                  
+   181                                  
+   182                                  
+   183                                  
+   184                                  
+   185                                  
+   186                                  
+   187                                  
+   188                                  
+   189                                  
+   190                                  
+   191                                  
+   192                                  
+   193                                  
+   194                                  
+   195                                  
+   196                                  
+   197                                  
+   198                                  
