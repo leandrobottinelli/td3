@@ -3,190 +3,266 @@
      3                                    ; Entro a modo_proteg
      4                                    ; Copio la funcion copy en rutinas(RAM)
      5                                    ; Llamo a la funcion copy para que me copie la ROM a nucleo (RAM)
-     6                                    ;
-     7                                    ; Voy a pol:, donde llamo funcion pooling para el teclado
-     8                                    ; En pooling del teclado pregunto por si hubo tecla y despues cual fue
-     9                                    ; Si la tecla fue "s" voy a FIN_POLLING y hago halt
-    10                                    ; Si es cualquier otra tecla, llamo a la funcion CARGAR_TABLA 
-    11                                    ; Almaceno cada tecla en la tabla, para moverme uso _CONTADOR_TABLA
-    12                                    ; El cual esta en .datos, asi que guardo en la pocision que tiene el contador
-    13                                    ; Y luego de alamacenada la tecla en la posicion indicada, incremento el contador
-    14                                    ; Finalmente guardo el nuevo valor del contador y vuelvo a pooling.
-    15                                  
-    16                                    ; NOTA: Las teclas las paso a traves de la pila   
-    17                                  ;-----------------------------------------------------------------------
-    18                                  EXTERN __FIN_PILA
-    19                                  EXTERN __SIZE_PILA
+     6                                  
+     7                                    ; Espero interrupcion de tecla, mientras tengo el flag desactivado
+     8                                    ; Cuando se produce la interrucion, la isr correspondiente activa el flag
+     9                                    ; LLamo a la funcion LECTURA_TECLA y obtengo el codigo de la tecla
+    10                                    ; En el main comparo cada caso y genero la excepcion correspondiente
+    11                                    ; En caso de quela tecla sea S, hago halt del programa
+    12                                  
+    13                                    ; NOTA: Las teclas las paso a traves de la pila   
+    14                                  ;-----------------------------------------------------------------------
+    15                                  EXTERN __FIN_PILA
+    16                                  EXTERN __SIZE_PILA
+    17                                  
+    18                                  EXTERN COPY_INIT
+    19                                  EXTERN POLLING
     20                                  
-    21                                  EXTERN COPY_INIT
-    22                                  EXTERN POLLING
-    23                                  
-    24                                  EXTERN __INICIO_RAM_RUTINAS
-    25                                  EXTERN __INICIO_ROM_RUTINAS
-    26                                  EXTERN __INICIO_ROM
-    27                                  EXTERN __INICIO_RAM_NUCLEO
-    28                                  EXTERN __INICIO_ROM_NUCLEO
-    29                                  
-    30                                  EXTERN __INICIO_RAM_IDT
-    31                                  EXTERN __INICIO_ROM_IDT
-    32                                  EXTERN __LONGITUD_IDT
+    21                                  EXTERN __INICIO_RAM_RUTINAS
+    22                                  EXTERN __INICIO_ROM_RUTINAS
+    23                                  EXTERN __INICIO_ROM
+    24                                  EXTERN __INICIO_RAM_NUCLEO
+    25                                  EXTERN __INICIO_ROM_NUCLEO
+    26                                  
+    27                                  EXTERN __INICIO_RAM_SYS_TABLES
+    28                                  EXTERN __INICIO_ROM_SYS_TABLES
+    29                                  EXTERN __LONGITUD_SYS_TABLES
+    30                                  
+    31                                  EXTERN __INICIO_RAM_TECLADO_RUTINA
+    32                                  EXTERN __INICIO_ROM_TECLADO_RUTINA
     33                                  
-    34                                  EXTERN __INICIO_RAM_TECLADO_RUTINA
-    35                                  EXTERN __INICIO_ROM_TECLADO_RUTINA
+    34                                  EXTERN __INICIO_ROM_TABLA_DIGITOS 
+    35                                  EXTERN __INICIO_RAM_TABLA_DIGITOS 
     36                                  
-    37                                  EXTERN __INICIO_ROM_TABLA_DIGITOS 
-    38                                  EXTERN __INICIO_RAM_TABLA_DIGITOS 
+    37                                  EXTERN __INICIO_ROM_DATOS 
+    38                                  EXTERN __INICIO_RAM_DATOS
     39                                  
-    40                                  EXTERN __INICIO_ROM_DATOS 
-    41                                  EXTERN __INICIO_RAM_DATOS
-    42                                  
-    43                                  
-    44                                  EXTERN __LONGITUD_RUTINAS
-    45                                  EXTERN __LONGITUD_ROM
-    46                                  EXTERN __LONGITUD_TECLADO_RUTINA
-    47                                  EXTERN __LONGITUD_DATOS
-    48                                  
-    49                                  GLOBAL _CONTADOR_TABLA
-    50                                  GLOBAL FIN_POLLING
-    51                                  
-    52                                  EXTERN img_gdtr
-    53                                  EXTERN img_idtr
-    54                                  
-    55                                  EXTERN cs_sel
-    56                                  EXTERN ds_sel
+    40                                  
+    41                                  EXTERN __LONGITUD_RUTINAS
+    42                                  EXTERN __LONGITUD_ROM
+    43                                  EXTERN __LONGITUD_TECLADO_RUTINA
+    44                                  EXTERN __LONGITUD_DATOS
+    45                                  
+    46                                  GLOBAL _CONTADOR_TABLA
+    47                                  
+    48                                  GLOBAL FIN
+    49                                  
+    50                                  EXTERN img_idtr
+    51                                  EXTERN img_gdtr_32
+    52                                  
+    53                                  EXTERN cs_sel_32
+    54                                  EXTERN ds_sel_32
+    55                                  
+    56                                  EXTERN LECTURA_TECLA
     57                                  
-    58                                  EXTERN _pic_configure
-    59                                  EXTERN _pit_configure
-    60                                  
+    58                                  GLOBAL cs_sel
+    59                                  GLOBAL ds_sel
+    60                                  GLOBAL flag_int_teclado
     61                                  
-    62                                  section .reset
-    63                                  arranque:
-    64                                  USE16
-    65 00000000 B80000                  mov ax,0
-    66 00000003 FFE0                    jmp ax
-    67                                  ;salto a inicio16
-    68 00000005 00<rept>                times 16-($-arranque) db 0
-    69                                  
-    70                                  section .init
-    71                                  
-    72                                  inicio:
+    62                                  
+    63                                  EXTERN _pic_configure
+    64                                  EXTERN _pit_configure
+    65                                  
+    66                                  
+    67                                  ;----------------------------------------------------------------------------------
+    68                                  %define TECLA_S  0x1F
+    69                                  %define TECLA_Y  0x15
+    70                                  %define TECLA_U  0x16
+    71                                  %define TECLA_I  0x17
+    72                                  %define TECLA_O  0x18
     73                                  
-    74 00000000 FA                        cli       ;Deshabilito interrupciones
-    75 00000001 66                        db 0x66            ;Requerido para direcciones mayores
-    76 00000002 2E0F0116[0000]            lgdt [cs:img_gdtr] ;que 0x00FFFFFFF. 
-    77 00000008 0F20C0                    mov eax,cr0        ;Habiltación bit de modo protegido. 
-    78 0000000B 6683C801                  or eax,1
-    79 0000000F 0F22C0                    mov cr0,eax
-    80                                   	
-    81 00000012 66EA[1A000000]-          jmp dword cs_sel:modo_proteg
-    81 00000018 [0000]             
-    82                                  
-    83                                  
-    84                                   
-    85                                  USE32
-    86                                  modo_proteg:
-    87 0000001A 6687DB                    xchg bx,bx
+    74                                  
+    75                                  ;----------------------------------------------------------------------------------
+    76                                  
+    77                                  
+    78                                  
+    79                                  section .reset
+    80                                  arranque:
+    81                                  USE16
+    82 00000000 B80000                  mov ax,0
+    83 00000003 FFE0                    jmp ax
+    84                                  ;salto a inicio16
+    85 00000005 00<rept>                times 16-($-arranque) db 0
+    86                                  
+    87                                  section .init
     88                                  
-    89 0000001D 66B8[0000]                mov ax,ds_sel
-    90 00000021 8ED8                      mov ds,ax
-    91 00000023 8ED0                      mov ss,ax
-    92 00000025 BC[00000000]              mov esp,__FIN_PILA
-    93                                  
-    94                                  
-    95 0000002A 68[00000000]              push __INICIO_ROM_RUTINAS
-    96 0000002F 68[00000000]              push __INICIO_RAM_RUTINAS
-    97 00000034 68[00000000]              push __LONGITUD_RUTINAS
-    98                                  
-    99 00000039 E8(00000000)              call __INICIO_ROM_RUTINAS ;Copio la funcion copy en RAM a mano
+    89 00000000 EB1E                    jmp inicio
+    90                                  
+    91                                  gdt:
+    92 00000002 0000000000000000                  db 0,0,0,0,0,0,0,0  ;Descriptor nulo
+    93                                  ds_sel    equ $-gdt
+    94 0000000A FFFF00000092CF00                  db 0xFF, 0xFF, 0, 0, 0, 0x92, 0xCF, 0
+    95                                  cs_sel    equ $-gdt
+    96 00000012 FFFF0000009ACF00                  db 0xFF, 0xFF, 0, 0, 0, 0x9A, 0xCF, 0
+    97                                  
+    98                                  long_gdt equ $-gdt
+    99                                  
    100                                  
-   101 0000003E 58                        pop eax
-   102 0000003F 58                        pop eax
-   103 00000040 58                        pop eax
+   101                                  img_gdtr:
+   102 0000001A 1700                        dw long_gdt-1
+   103 0000001C [02000000]                  dd gdt
    104                                  
    105                                  
    106                                  
-   107 00000041 68[00000000]              push __INICIO_ROM_NUCLEO
-   108 00000046 68[00000000]              push __INICIO_RAM_NUCLEO
-   109 0000004B 68[00000000]              push __LONGITUD_ROM
-   110                                  
-   111                                  
-   112 00000050 E8(00000000)              call COPY_INIT            ;Copio toda la ROM en RAM desde
-   113 00000055 58                        pop eax                   ;funcion copy en RAM
-   114 00000056 58                        pop eax
-   115 00000057 58                        pop eax
+   107                                  inicio:
+   108 00000020 FA                        cli       ;Deshabilito interrupciones
+   109 00000021 66                        db 0x66            ;Requerido para direcciones mayores
+   110 00000022 2E0F0116[1A00]            lgdt [cs:img_gdtr] ;que 0x00FFFFFFF. 
+   111 00000028 0F20C0                    mov eax,cr0        ;Habiltación bit de modo protegido. 
+   112 0000002B 6683C801                  or eax,1
+   113 0000002F 0F22C0                    mov cr0,eax
+   114                                   	
+   115 00000032 66EA[3A000000]1000       jmp dword cs_sel:modo_proteg
    116                                  
    117                                  
-   118                                  
-   119                                  
-   120 00000058 E9(00000000)              jmp nucleos
-   121                                   
+   118                                   
+   119                                  USE32
+   120                                  modo_proteg:
+   121 0000003A 6687DB                    xchg bx,bx
    122                                  
-   123                                   ;----------------------------------------------------------------------
-   124                                  
-   125                                  section .nucleo
-   126                                  
+   123 0000003D 66B80800                  mov ax,ds_sel
+   124 00000041 8ED8                      mov ds,ax
+   125 00000043 8ED0                      mov ss,ax
+   126 00000045 BC[00000000]              mov esp,__FIN_PILA
    127                                  
-   128                                  nucleos:   
-   129                                  
-   130 00000000 68[00000000]              push __INICIO_ROM_TECLADO_RUTINA
-   131 00000005 68[00000000]              push __INICIO_RAM_TECLADO_RUTINA
-   132 0000000A 68[00000000]              push __LONGITUD_TECLADO_RUTINA 
-   133                                  
-   134 0000000F E8(00000000)              call COPY_INIT
-   135                                    
-   136 00000014 58                        pop eax
-   137 00000015 58                        pop eax
-   138 00000016 58                        pop eax
+   128                                  
+   129 0000004A 68[00000000]              push __INICIO_ROM_RUTINAS
+   130 0000004F 68[00000000]              push __INICIO_RAM_RUTINAS
+   131 00000054 68[00000000]              push __LONGITUD_RUTINAS
+   132                                  
+   133 00000059 E8(00000000)              call __INICIO_ROM_RUTINAS ;Copio la funcion copy en RAM a mano
+   134                                  
+   135 0000005E 58                        pop eax
+   136 0000005F 58                        pop eax
+   137 00000060 58                        pop eax
+   138                                  
    139                                  
    140                                  
-   141                                  
-   142 00000017 68[00000000]              push __INICIO_ROM_IDT
-   143 0000001C 68[00000000]              push __INICIO_RAM_IDT
-   144 00000021 68[00000000]              push __LONGITUD_IDT
+   141 00000061 68[00000000]              push __INICIO_ROM_NUCLEO
+   142 00000066 68[00000000]              push __INICIO_RAM_NUCLEO
+   143 0000006B 68[00000000]              push __LONGITUD_ROM
+   144                                  
    145                                  
-   146 00000026 E8(00000000)              call COPY_INIT              ;Copio la IDT a sys_tables(RAM)
-   147                                      
-   148 0000002B 58                        pop eax
-   149 0000002C 58                        pop eax
-   150 0000002D 58                        pop eax
+   146 00000070 E8(00000000)              call COPY_INIT            ;Copio toda la ROM en RAM desde
+   147 00000075 58                        pop eax                   ;funcion copy en RAM
+   148 00000076 58                        pop eax
+   149 00000077 58                        pop eax
+   150                                  
    151                                  
    152                                  
    153                                  
-   154 0000002E 68[00000000]              push __INICIO_ROM_DATOS
-   155 00000033 68[00000000]              push __INICIO_RAM_DATOS
-   156 00000038 68[00000000]              push __LONGITUD_DATOS
-   157                                  
-   158 0000003D E8(00000000)              call COPY_INIT                ;Copio seccion de datos. Contador de la tabla de digitos
-   159                                    
-   160 00000042 58                        pop eax
-   161 00000043 58                        pop eax
-   162 00000044 58                        pop eax
+   154 00000078 E9(00000000)              jmp nucleos
+   155                                   
+   156                                  
+   157                                   ;----------------------------------------------------------------------
+   158                                  
+   159                                  section .nucleo
+   160                                  
+   161                                  
+   162                                  nucleos:   
    163                                  
-   164                                  
-   165 00000045 0F011D[00000000]        lidt [img_idtr]                    ;VER---------------------------
-   166 0000004C E8(00000000)            call _pic_configure
-   167 00000051 E8(00000000)            call _pit_configure
-   168 00000056 6687DB                  xchg bx, bx
-   169                                  
-   170                                  
-   171                                  pol:
-   172 00000059 E8(00000000)              call POLLING       ; Voy a la funcion de pooling en forma de loop         
-   173 0000005E EBF9                      jmp pol            ; hasta la tecla "s"
+   164 00000000 68[00000000]              push __INICIO_ROM_TECLADO_RUTINA
+   165 00000005 68[00000000]              push __INICIO_RAM_TECLADO_RUTINA
+   166 0000000A 68[00000000]              push __LONGITUD_TECLADO_RUTINA 
+   167                                  
+   168 0000000F E8(00000000)              call COPY_INIT
+   169                                    
+   170 00000014 58                        pop eax
+   171 00000015 58                        pop eax
+   172 00000016 58                        pop eax
+   173                                  
    174                                  
-   175                                  FIN_POLLING:
-   176 00000060 90                        nop 
-   177 00000061 F4                        hlt               ; Se presiono tecla "s", hago halt de todo
-   178 00000062 EBFC                      jmp FIN_POLLING
-   179                                  
-   180                                  ;----------------------------------------------------------------------
-   181                                  section .datos
-   182                                  
-   183 00000000 [0000000000000000]      _CONTADOR_TABLA: dq __INICIO_RAM_TABLA_DIGITOS 
-   183          ******************       warning: 64-bit unsigned relocation zero-extended from 32 bits
- [-w+zext-reloc]
-   184                                  
-   185                                  
+   175                                  
+   176                                  
+   177 00000017 68[00000000]              push __INICIO_ROM_SYS_TABLES
+   178 0000001C 68[00000000]              push __INICIO_RAM_SYS_TABLES
+   179 00000021 68[00000000]              push __LONGITUD_SYS_TABLES
+   180                                  
+   181 00000026 E8(00000000)              call COPY_INIT              ;Copio la GDT e IDT a sys_tables(RAM)
+   182                                      
+   183 0000002B 58                        pop eax
+   184 0000002C 58                        pop eax
+   185 0000002D 58                        pop eax
    186                                  
    187                                  
-   188                                   
-   189                                  
+   188                                  
+   189 0000002E 68[00000000]              push __INICIO_ROM_DATOS
+   190 00000033 68[00000000]              push __INICIO_RAM_DATOS
+   191 00000038 68[00000000]              push __LONGITUD_DATOS
+   192                                  
+   193 0000003D E8(00000000)              call COPY_INIT                ;Copio seccion de datos. Contador de la tabla de digitos
+   194                                    
+   195 00000042 58                        pop eax
+   196 00000043 58                        pop eax
+   197 00000044 58                        pop eax
+   198                                  
+   199 00000045 2E0F0115[00000000]      lgdt [cs:img_gdtr_32] 
+   200                                  
+   201 0000004D 0F011D[00000000]        lidt [img_idtr]                    
+   202 00000054 E8(00000000)            call _pic_configure
+   203 00000059 E8(00000000)            call _pit_configure
+   204 0000005E FB                      sti
+   205 0000005F 6687DB                  xchg bx, bx
+   206                                  
+   207                                  
+   208                                  WHILE:
+   209                                  
+   210 00000062 668B1D[08000000]              mov bx, [flag_int_teclado]
+   211 00000069 6683FB00                      cmp bx, 0x00
+   212 0000006D 74F3                          jz WHILE
+   213                                  
+   214                                  
+   215 0000006F E8(00000000)                  call LECTURA_TECLA
+   216 00000074 FB                            sti
+   217                                  
+   218                                    UD:
+   219 00000075 3C16                          cmp al, TECLA_U ; Excepcion UD (Undefined Opcode) 
+   220 00000077 7500                          jnz DE
+   221                                  
+   222                                    DE:
+   223 00000079 3C15                          cmp al, TECLA_Y ; Excepcion DE (Divide Error) 
+   224 0000007B 750C                          jnz DF
+   225 0000007D B810000000                    mov eax, 0x10
+   226 00000082 B900000000                    mov ecx, 0x00
+   227 00000087 F7F1                          div ecx
+   228                                  
+   229                                    DF:
+   230 00000089 3C17                          cmp al, TECLA_I ; Excepcion DF (Double Fault) 
+   231 0000008B 7500                          jnz GP
+   232                                  
+   233                                    GP:
+   234 0000008D 3C18                          cmp al, TECLA_O ; Excepcion GP (General Protection) 
+   235 0000008F 7506                          jnz SHUTDOWN
+   236 00000091 66B8FFFF                      mov ax, 0xFFFF
+   237 00000095 8ED0                          mov ss, ax
+   238                                          
+   239                                    SHUTDOWN:
+   240 00000097 3C1F                          cmp al, TECLA_S ; 
+   241 00000099 740C                          jz FIN    
+   242                                  
+   243 0000009B 66B80000                mov ax, 0x0
+   244 0000009F 66A3[08000000]          mov [flag_int_teclado], ax
+   245 000000A5 EBBB                    jmp WHILE
+   246                                  
+   247                                  
+   248                                  FIN:
+   249 000000A7 90                      nop 
+   250 000000A8 F4                      hlt               ; Se presiono tecla "s", hago halt de todo
+   251 000000A9 EBFC                    jmp FIN
+   252                                  
+   253                                  
+   254                                  
+   255                                  
+   256                                  ;----------------------------------------------------------------------
+   257                                  section .datos
+   258                                  
+   259 00000000 [0000000000000000]      _CONTADOR_TABLA: dq __INICIO_RAM_TABLA_DIGITOS 
+   259          ******************       warning: 64-bit unsigned relocation zero-extended from 32 bits
+ [-w+zext-reloc]
+   260                                  
+   261 00000008 00                      flag_int_teclado: db 0x00
+   262                                  
+   263                                  
+   264                                  
+   265                                   
+   266                                  

@@ -42,10 +42,10 @@ SECTIONS
 
 
 	.sys_tables 0x00100000 :
-	{ __INICIO_RAM_IDT  = .;
-	  __INICIO_ROM_IDT  = LOADADDR(.sys_tables);
+	{ __INICIO_RAM_SYS_TABLES  = .;
+	  __INICIO_ROM_SYS_TABLES  = LOADADDR(.sys_tables);
 	  *(.sys_tables);} AT >rom_init
-	  __LONGITUD_IDT = SIZEOF(.sys_tables);
+	  __LONGITUD_SYS_TABLES = SIZEOF(.sys_tables);
 
 
 	.tabla_digitos 0x00310000:

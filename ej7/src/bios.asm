@@ -3,15 +3,12 @@
   ; Entro a modo_proteg
   ; Copio la funcion copy en rutinas(RAM)
   ; Llamo a la funcion copy para que me copie la ROM a nucleo (RAM)
-  ;
-  ; Voy a pol:, donde llamo funcion pooling para el teclado
-  ; En pooling del teclado pregunto por si hubo tecla y despues cual fue
-  ; Si la tecla fue "s" voy a FIN_POLLING y hago halt
-  ; Si es cualquier otra tecla, llamo a la funcion CARGAR_TABLA 
-  ; Almaceno cada tecla en la tabla, para moverme uso _CONTADOR_TABLA
-  ; El cual esta en .datos, asi que guardo en la pocision que tiene el contador
-  ; Y luego de alamacenada la tecla en la posicion indicada, incremento el contador
-  ; Finalmente guardo el nuevo valor del contador y vuelvo a pooling.
+
+  ; Espero interrupcion de tecla, mientras tengo el flag desactivado
+  ; Cuando se produce la interrucion, la isr correspondiente activa el flag
+  ; LLamo a la funcion LECTURA_TECLA y obtengo el codigo de la tecla
+  ; En el main comparo cada caso y genero la excepcion correspondiente
+  ; En caso de quela tecla sea S, hago halt del programa
 
   ; NOTA: Las teclas las paso a traves de la pila   
 ;-----------------------------------------------------------------------
@@ -27,9 +24,9 @@ EXTERN __INICIO_ROM
 EXTERN __INICIO_RAM_NUCLEO
 EXTERN __INICIO_ROM_NUCLEO
 
-EXTERN __INICIO_RAM_IDT
-EXTERN __INICIO_ROM_IDT
-EXTERN __LONGITUD_IDT
+EXTERN __INICIO_RAM_SYS_TABLES
+EXTERN __INICIO_ROM_SYS_TABLES
+EXTERN __LONGITUD_SYS_TABLES
 
 EXTERN __INICIO_RAM_TECLADO_RUTINA
 EXTERN __INICIO_ROM_TECLADO_RUTINA
@@ -47,16 +44,36 @@ EXTERN __LONGITUD_TECLADO_RUTINA
 EXTERN __LONGITUD_DATOS
 
 GLOBAL _CONTADOR_TABLA
-GLOBAL FIN_POLLING
 
-EXTERN img_gdtr
+GLOBAL FIN
+
 EXTERN img_idtr
+EXTERN img_gdtr_32
 
-EXTERN cs_sel
-EXTERN ds_sel
+EXTERN cs_sel_32
+EXTERN ds_sel_32
+
+EXTERN LECTURA_TECLA
+
+GLOBAL cs_sel
+GLOBAL ds_sel
+GLOBAL flag_int_teclado
+
 
 EXTERN _pic_configure
 EXTERN _pit_configure
+
+
+;----------------------------------------------------------------------------------
+%define TECLA_S  0x1F
+%define TECLA_Y  0x15
+%define TECLA_U  0x16
+%define TECLA_I  0x17
+%define TECLA_O  0x18
+
+
+;----------------------------------------------------------------------------------
+
 
 
 section .reset
@@ -69,8 +86,25 @@ times 16-($-arranque) db 0
 
 section .init
 
-inicio:
+jmp inicio
 
+gdt:
+          db 0,0,0,0,0,0,0,0  ;Descriptor nulo
+ds_sel    equ $-gdt
+          db 0xFF, 0xFF, 0, 0, 0, 0x92, 0xCF, 0
+cs_sel    equ $-gdt
+          db 0xFF, 0xFF, 0, 0, 0, 0x9A, 0xCF, 0
+
+long_gdt equ $-gdt
+
+
+img_gdtr:
+    dw long_gdt-1
+    dd gdt
+
+
+
+inicio:
   cli       ;Deshabilito interrupciones
   db 0x66            ;Requerido para direcciones mayores
   lgdt [cs:img_gdtr] ;que 0x00FFFFFFF. 
@@ -139,11 +173,12 @@ nucleos:
 
 
 
-  push __INICIO_ROM_IDT
-  push __INICIO_RAM_IDT
-  push __LONGITUD_IDT
 
-  call COPY_INIT              ;Copio la IDT a sys_tables(RAM)
+  push __INICIO_ROM_SYS_TABLES
+  push __INICIO_RAM_SYS_TABLES
+  push __LONGITUD_SYS_TABLES
+
+  call COPY_INIT              ;Copio la GDT e IDT a sys_tables(RAM)
     
   pop eax
   pop eax
@@ -161,27 +196,69 @@ nucleos:
   pop eax
   pop eax
 
+lgdt [cs:img_gdtr_32] 
 
-lidt [img_idtr]                    ;VER---------------------------
+lidt [img_idtr]                    
 call _pic_configure
 call _pit_configure
+sti
 xchg bx, bx
 
 
-pol:
-  call POLLING       ; Voy a la funcion de pooling en forma de loop         
-  jmp pol            ; hasta la tecla "s"
+WHILE:
 
-FIN_POLLING:
-  nop 
-  hlt               ; Se presiono tecla "s", hago halt de todo
-  jmp FIN_POLLING
+      mov bx, [flag_int_teclado]
+      cmp bx, 0x00
+      jz WHILE
+
+
+      call LECTURA_TECLA
+      sti
+
+  UD:
+      cmp al, TECLA_U ; Excepcion UD (Undefined Opcode) 
+      jnz DE
+
+  DE:
+      cmp al, TECLA_Y ; Excepcion DE (Divide Error) 
+      jnz DF
+      mov eax, 0x10
+      mov ecx, 0x00
+      div ecx
+
+  DF:
+      cmp al, TECLA_I ; Excepcion DF (Double Fault) 
+      jnz GP
+
+  GP:
+      cmp al, TECLA_O ; Excepcion GP (General Protection) 
+      jnz SHUTDOWN
+      mov ax, 0xFFFF
+      mov ss, ax
+        
+  SHUTDOWN:
+      cmp al, TECLA_S ; 
+      jz FIN    
+
+mov ax, 0x0
+mov [flag_int_teclado], ax
+jmp WHILE
+
+
+FIN:
+nop 
+hlt               ; Se presiono tecla "s", hago halt de todo
+jmp FIN
+
+
+
 
 ;----------------------------------------------------------------------
 section .datos
 
 _CONTADOR_TABLA: dq __INICIO_RAM_TABLA_DIGITOS 
 
+flag_int_teclado: db 0x00
 
 
 

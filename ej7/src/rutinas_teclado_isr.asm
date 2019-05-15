@@ -1,5 +1,4 @@
 GLOBAL isr0_handler_DE
-GLOBAL isr1_handler_DB
 GLOBAL isr2_handler_NMI
 GLOBAL isr3_handler_BP
 GLOBAL isr4_handler_OF
@@ -18,14 +17,17 @@ GLOBAL isr16_handler_MF
 GLOBAL isr17_handler_AC
 GLOBAL isr18_handler_MC
 GLOBAL isr19_handler_XF
-GLOBAL isr20_31_handler
+GLOBAL isr32_handler
+GLOBAL isr33_handler
 
 
-GLOBAL POLLING
 
-EXTERN FIN_POLLING
-EXTERN CARGAR_TABLA
+;GLOBAL POLLING
+GLOBAL LECTURA_TECLA
+EXTERN FIN
 EXTERN __INICIO_RAM_TECLADO_RUTINA
+EXTERN flag_int_teclado
+
 
 %define _PUERTO_TECLADO  0x64;
 %define _PUERTO_TECLADO_CODIGO 0x60;
@@ -40,24 +42,24 @@ in al, _PUERTO_TECLADO
 bt eax, 0x00
 jnc POLLING
 
+LECTURA_TECLA:
 
 in al, _PUERTO_TECLADO_CODIGO
 bt ax, 0x7
 
 xchg bx,bx
-cmp al, 0x1F		;Si detecto que la tecla fue "s" termino el programa
-jz FIN_POLLING
-
-
-jmp CARGADO_TABLA
-
-
-CARGADO_TABLA:
-
-push ax
-call CARGAR_TABLA
-pop ax
 ret
+
+
+;jmp CARGADO_TABLA
+
+
+;CARGADO_TABLA:
+
+;push ax
+;call CARGAR_TABLA
+;pop ax
+;ret
 
 
 ;---------------------------------------------------------------------
@@ -72,10 +74,6 @@ default_isr:
 
 isr0_handler_DE:
    mov edx, 0
-   jmp default_isr
-
-isr1_handler_DB:
-   mov edx, 1
    jmp default_isr
 
 
@@ -166,14 +164,20 @@ isr19_handler_XF:
    jmp default_isr
 
 
-isr20_31_handler:
-   mov edx, 20
-   jmp default_isr
-
-
-isr32_47_handler:
+isr32_handler:
    mov edx, 32
    jmp default_isr
+
+isr33_handler:
+
+   xchg bx,bx
+   pushad
+   mov ax, 0x1
+   mov [flag_int_teclado],ax
+   mov al,0x20       ;Codigo para avisar al PIC que atendi la int 
+   out 0x20,al
+   popad
+   iret
 
 
 

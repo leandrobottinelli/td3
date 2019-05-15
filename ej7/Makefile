@@ -3,7 +3,7 @@ OUTPUT_NAME = bios
 OUTPUT_NAME2 = copy
 OUTPUT_NAME3 = rutinas_teclado_isr
 OUTPUT_NAME4 = rutinas
-OUTPUT_NAME5 = IDT
+OUTPUT_NAME5 = sys_tables
 OUTPUT_NAME6 = pic
 OUTPUT_NAME7 = pit
 
@@ -34,9 +34,9 @@ all: clean crear_estructura
 	@echo	''
 	@echo	'-----> Linkeando'
 	
-	$(LINKER) -z max-page-size=0x1000 -m elf_i386 -T sup/linker.lds  bin/$(OUTPUT_NAME).elf bin/$(OUTPUT_NAME2).elf bin/$(OUTPUT_NAME3).elf bin/$(OUTPUT_NAME4).elf bin/$(OUTPUT_NAME5).elf bin/$(OUTPUT_NAME6).elf bin/$(OUTPUT_NAME7).elf -o bin/rom.elf  -Map sup/$(OUTPUT_NAME).map
+	$(LINKER) -z max-page-size=0x1000 -m elf_i386 -T sup/linker.lds  bin/$(OUTPUT_NAME).elf  bin/$(OUTPUT_NAME2).elf bin/$(OUTPUT_NAME3).elf bin/$(OUTPUT_NAME4).elf bin/$(OUTPUT_NAME5).elf bin/$(OUTPUT_NAME6).elf bin/$(OUTPUT_NAME7).elf -o bin/rom.elf  -Map sup/$(OUTPUT_NAME).map
 
-	$(LINKER) -z max-page-size=0x1000 --oformat=binary -m elf_i386 -T sup/linker.lds  bin/$(OUTPUT_NAME).elf bin/$(OUTPUT_NAME2).elf bin/$(OUTPUT_NAME3).elf bin/$(OUTPUT_NAME4).elf  bin/$(OUTPUT_NAME5).elf bin/$(OUTPUT_NAME6).elf bin/$(OUTPUT_NAME7).elf  -o bin/rom.bin
+	$(LINKER) -z max-page-size=0x1000 --oformat=binary -m elf_i386 -T sup/linker.lds  bin/$(OUTPUT_NAME).elf bin/$(OUTPUT_NAME2).elf bin/$(OUTPUT_NAME3).elf bin/$(OUTPUT_NAME4).elf  bin/$(OUTPUT_NAME5).elf bin/$(OUTPUT_NAME6).elf bin/$(OUTPUT_NAME7).elf -o bin/rom.bin
 
 
 bochs:

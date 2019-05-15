@@ -6,6 +6,9 @@
 
 %define PIC_8259_EOI               0x20
 
+%define PIC1_MASK               0xFD
+%define PIC2_MASK               0xFF
+
 SECTION .init progbits
 GLOBAL _pic_configure
 USE32
@@ -20,10 +23,10 @@ _pic_configure:
    mov al, 0x4
    out MASTER_PIC_8259_DATA_PORT, al
    ;; ICW4: Modo 8086
-   mov al, 0x1
+   mov al, 0x01
    out MASTER_PIC_8259_DATA_PORT, al
    ;; Enmascaro interrupciones del PIC 1 según 'mask_1'
-   mov al, 0xFF
+   mov al, PIC1_MASK
    out MASTER_PIC_8259_DATA_PORT, al
    ;; ICW1: IRQs activas x flanco, cascada, e ICW4
    mov al, 0x11
@@ -38,5 +41,5 @@ _pic_configure:
    mov al, 0x1
    out SLAVE_PIC_8259_DATA_PORT, al
    ;; Enmascaro interrupciones del PIC 2 según 'mask_2'
-   mov al, 0xFF
+   mov al, PIC2_MASK
    out SLAVE_PIC_8259_DATA_PORT, al
