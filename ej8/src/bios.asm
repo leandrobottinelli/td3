@@ -18,7 +18,9 @@
   ; NOTA: Las teclas las paso a traves de la pila 
   ; Falta ver caso que me presionen enter sin tocar otra tecla.
   ; Falta acomodar, si se excede de 16 teclas el orden de como se guarda
-;-----------------------------------------------------------------------
+;-----------------------------------------------------------------------------------
+
+
 EXTERN __FIN_PILA
 EXTERN __SIZE_PILA
 
@@ -53,6 +55,7 @@ EXTERN __LONGITUD_DATOS
 GLOBAL _CONTADOR_TECLAS
 GLOBAL _ENTRADA_TABLA
 GLOBAL _CONTADOR_TECLAS_BYTES
+GLOBAL _CONTADOR_TIMER
 
 GLOBAL FIN
 
@@ -131,7 +134,7 @@ img_gdtr:
 
 
 inicio:
-  cli       ;Deshabilito interrupciones
+  cli                ;Deshabilito interrupciones
   db 0x66            ;Requerido para direcciones mayores
   lgdt [cs:img_gdtr] ;que 0x00FFFFFFF. 
   mov eax,cr0        ;Habiltación bit de modo protegido. 
@@ -224,9 +227,11 @@ nucleos:
 
 lgdt [cs:img_gdtr_32] 
 
-lidt [img_idtr]                    
+lidt [img_idtr]   
+
 call _pic_configure
 call _pit_configure
+
 sti
 xchg bx, bx
 
@@ -349,7 +354,8 @@ WHILE:
       mov ax, 0x0
       mov [_flag_int_teclado], ax
       sti 
-      BKP 
+      BKP
+
 
 jmp WHILE
 
@@ -359,12 +365,12 @@ jmp WHILE
 ;----------------------------------------------------------------------
 section .datos
 
-_CONTADOR_TECLAS: dq 0x08       ;Contador de teclas validas presionadas
+_CONTADOR_TECLAS: dq 0x00       ;Contador de teclas validas presionadas
 _CONTADOR_TECLAS_BYTES: dq 0x0  ;Contador para tomar de a dos hexas, y ponerlos en un byte
 _ENTRADA_TABLA: dq __INICIO_RAM_TABLA_DIGITOS + 0x10 ;Puntero a la primera entrada de tabla libre
 _flag_int_teclado: dq 0x00      ;Flag si interrupio el teclado
 _flag_16_TECLAS: dq 0x00        ;Flag si se presionaron mas de 16 teclas
-
+_CONTADOR_TIMER: dq 0x00        ;Contador de interrupciones del PIT
 
  
 

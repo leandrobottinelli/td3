@@ -24,7 +24,7 @@ _pit_configure:
    pop  dx
    out  PIT_8253_CMD_PORT, al
    add  dx, PIT_8253_CHANNEL_BASE_DATA_PORT
-   mov  ax, word 11932 ; 1 ms
+   mov  ax, word 1193200    ;100 [ms] * 1.19318[MHz] = 119320   
    out  dx, al
    mov  al, ah
    out  dx, al

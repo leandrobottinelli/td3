@@ -18,11 +18,11 @@ CARGAR_TABLA:
 
     mov ebp, esp  
     mov al, [ebp + 4]						    ;Recibo por la pila, el valor de la tecla
-    mov ecx, [_CONTADOR_TECLAS]     				;Cargo valor del contador,ultima pocision de tecla guardada
+    mov ecx, [_CONTADOR_TECLAS]     		    ;Cargo valor del contador,ultima pocision de tecla guardada
     mov [__INICIO_RAM_TABLA_DIGITOS + ecx], al  ;Guardo la tecla en el vector
                                    				; de la tabla, indicada por el contador
     inc ecx
-    cmp ecx, 0x10		   ;Comparo si llego a 16 bytes
+    cmp ecx, 0x10		                        ;Comparo si llego a 16 bytes
     jz RESET_CONTADOR
     jmp INCREMENTO_CONTADOR
 
@@ -76,7 +76,7 @@ CARGAR_TABLA_2:
 
 	PARIDAD:    
 	mov ecx,[_CONTADOR_TECLAS] 
-   	test ecx,1  				;Compruebo si el numero de teclas ingresadas
+   	test ecx,1  				; Compruebo si el numero de teclas ingresadas
    	jnz IMPAR       			; son pares o impares
    	jmp PAR
    	
@@ -113,7 +113,7 @@ CARGAR_TABLA_2:
    	shl al, 0x4  				;Desplazo el primer byte 4 pocisiones
    	or al, bl	 				;y sumo el hexa de la primera tecla y la segunda
 
-   	mov ebx,[_ENTRADA_TABLA] ;Cargo el valor de que entrada de la Tabla estoy
+   	mov ebx,[_ENTRADA_TABLA]    ;Cargo el valor de que entrada de la Tabla estoy
     mov [ebx + ecx - 0x1], al 	;Guardo el byte de las dos teclas
     dec ecx
     jne GUARDADO_NUMERO ;Repito hasta que el contador de cantidad de teclas llegue a cero
@@ -124,6 +124,6 @@ CARGAR_TABLA_2:
     add ecx, 0x10  
     mov edx, 0x00  
     mov [_CONTADOR_TECLAS_BYTES], edx ; Reseteo el contador que barre las teclas de a dos
-    mov [_CONTADOR_TECLAS], edx 	 ; Reseteo el contador con la cantidad de teclas
-    add [_ENTRADA_TABLA], ecx  ;Guardo el valor del contador incrementado
-    ret                           ;para apiuntar a la siguiente entrada de la tabla
+    mov [_CONTADOR_TECLAS], edx 	  ; Reseteo el contador con la cantidad de teclas
+    add [_ENTRADA_TABLA], ecx         ; Guardo el valor del contador incrementado
+    ret                               ; para apuntar a la siguiente entrada de la tabla

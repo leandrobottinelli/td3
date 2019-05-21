@@ -27,8 +27,8 @@ EXTERN isr17_handler_AC
 EXTERN isr18_handler_MC
 EXTERN isr19_handler_XF
 EXTERN isr20_31_handler
-EXTERN isr32_handler
-EXTERN isr33_handler
+EXTERN isr32_handler_PIT
+EXTERN isr33_handler_KEYBOARD
 
 
 section .sys_tables
@@ -199,14 +199,14 @@ ISR20_31 equ $-idt
   times 12 dq 0x0
 
 ISR32 equ $-idt
-   dw isr32_handler
+   dw isr32_handler_PIT
    dw cs_sel_32
    db 0x0
    db 0x8E
    dw 0x0
 
 ISR33 equ $-idt
-   dw isr33_handler
+   dw isr33_handler_KEYBOARD
    dw cs_sel_32
    db 0x0
    db 0x8E

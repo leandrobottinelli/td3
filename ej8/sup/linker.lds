@@ -1,12 +1,12 @@
 
 /* SECTIONS:   vma (RAM)
- *    init                    0x00000000
+ *    rutina_teclado_isr      0x00000000
  *    sys_tables              0x00100000
  *    nucleo                  0x00300000
  *    tabla_digitos           0x00310000
  *    datos                   0x003E0000
-  *	  rutinas 				  0x00F00000 
- *  - stack 				  0x1FEFB000
+ *	  rutinas 				  0x00F00000 
+ *    stack 				  0x1FEFB000
  *    rom_init                0xFFFF0000
  *    reset_vector            0xFFFFFFF0
  */

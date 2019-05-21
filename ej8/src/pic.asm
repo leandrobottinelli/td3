@@ -6,8 +6,8 @@
 
 %define PIC_8259_EOI               0x20
 
-%define PIC1_MASK               0xFD
-%define PIC2_MASK               0xFF
+%define PIC1_MASK               0xFC   ;IRQ0, IRQ1 habilitadas
+%define PIC2_MASK               0xFF 
 
 SECTION .init progbits
 GLOBAL _pic_configure

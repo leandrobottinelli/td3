@@ -17,8 +17,8 @@ GLOBAL isr16_handler_MF
 GLOBAL isr17_handler_AC
 GLOBAL isr18_handler_MC
 GLOBAL isr19_handler_XF
-GLOBAL isr32_handler
-GLOBAL isr33_handler
+GLOBAL isr32_handler_PIT
+GLOBAL isr33_handler_KEYBOARD
 
 
 
@@ -27,6 +27,7 @@ GLOBAL LECTURA_TECLA
 EXTERN FIN
 EXTERN __INICIO_RAM_TECLADO_RUTINA
 EXTERN _flag_int_teclado
+EXTERN _CONTADOR_TIMER
 
 
 %define _PUERTO_TECLADO  0x64;
@@ -165,17 +166,22 @@ isr19_handler_XF:
    jmp default_isr
 
 
-isr32_handler:
-   mov edx, 32
-   jmp default_isr
+isr32_handler_PIT:
+   pushad
+   mov eax, [_CONTADOR_TIMER]
+   inc eax
+   mov [_CONTADOR_TIMER], eax
+   mov al,0x20                ;Codigo para avisar al PIC que atendi la int 
+   out 0x20,al
+   popad
+   iret
 
-isr33_handler:
+isr33_handler_KEYBOARD:
 
-   ;xchg bx,bx
    pushad
    mov ax, 0x1
-   mov [_flag_int_teclado],ax
-   mov al,0x20       ;Codigo para avisar al PIC que atendi la int 
+   mov [_flag_int_teclado],ax ;Flag para saber que interrumpio el teclado
+   mov al,0x20                ;Codigo para avisar al PIC que atendi la int 
    out 0x20,al
    popad
    iret

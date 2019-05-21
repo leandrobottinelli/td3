@@ -27,8 +27,8 @@
     27                                  EXTERN isr18_handler_MC
     28                                  EXTERN isr19_handler_XF
     29                                  EXTERN isr20_31_handler
-    30                                  EXTERN isr32_handler
-    31                                  EXTERN isr33_handler
+    30                                  EXTERN isr32_handler_PIT
+    31                                  EXTERN isr33_handler_KEYBOARD
     32                                  
     33                                  
     34                                  section .sys_tables
@@ -200,14 +200,14 @@
    199 000000BE <rept>             
    200                                  
    201                                  ISR32 equ $-idt
-   202 0000011E [0000]                     dw isr32_handler
+   202 0000011E [0000]                     dw isr32_handler_PIT
    203 00000120 1000                       dw cs_sel_32
    204 00000122 00                         db 0x0
    205 00000123 8E                         db 0x8E
    206 00000124 0000                       dw 0x0
    207                                  
    208                                  ISR33 equ $-idt
-   209 00000126 [0000]                     dw isr33_handler
+   209 00000126 [0000]                     dw isr33_handler_KEYBOARD
    210 00000128 1000                       dw cs_sel_32
    211 0000012A 00                         db 0x0
    212 0000012B 8E                         db 0x8E

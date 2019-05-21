@@ -6,8 +6,8 @@
      6                                  
      7                                  %define PIC_8259_EOI               0x20
      8                                  
-     9                                  %define PIC1_MASK               0xFD
-    10                                  %define PIC2_MASK               0xFF
+     9                                  %define PIC1_MASK               0xFC   ;IRQ0, IRQ1 habilitadas
+    10                                  %define PIC2_MASK               0xFF 
     11                                  
     12                                  SECTION .init progbits
     13                                  GLOBAL _pic_configure
@@ -26,7 +26,7 @@
     26 0000000C B001                       mov al, 0x01
     27 0000000E E621                       out MASTER_PIC_8259_DATA_PORT, al
     28                                     ;; Enmascaro interrupciones del PIC 1 según 'mask_1'
-    29 00000010 B0FD                       mov al, PIC1_MASK
+    29 00000010 B0FC                       mov al, PIC1_MASK
     30 00000012 E621                       out MASTER_PIC_8259_DATA_PORT, al
     31                                     ;; ICW1: IRQs activas x flanco, cascada, e ICW4
     32 00000014 B011                       mov al, 0x11
