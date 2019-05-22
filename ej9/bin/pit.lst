@@ -1,0 +1,38 @@
+     1                                  %define PIT_8253_CHANNEL_BASE_DATA_PORT 0x40
+     2                                  %define PIT_8253_CHANNEL_COUNT 3
+     3                                  %define PIT_8253_CMD_PORT 0x43
+     4                                  
+     5                                  %define PIT_8253_CMD_CHANNEL_OFFSET 6
+     6                                  %define PIT_8253_CMD_OPMODE_OFFSET  1
+     7                                  %define PIT_8253_LOHI_ACCESS_MODE   0x30
+     8                                  
+     9                                  SECTION .init progbits
+    10                                  GLOBAL _pit_configure
+    11                                  USE32
+    12                                  _pit_configure:
+    13 00000000 55                         push ebp
+    14 00000001 89E5                       mov  ebp, esp
+    15 00000003 66BA0000                   mov  dx, word 0
+    16 00000007 6683FA03                   cmp  dx, PIT_8253_CHANNEL_COUNT
+    17 0000000B 7D21                       jge  .bad_channel
+    18 0000000D 6652                       push dx
+    19 0000000F C0E206                     shl  dl, PIT_8253_CMD_CHANNEL_OFFSET
+    20 00000012 B003                       mov  al, byte 3
+    21 00000014 D0E0                       shl  al, PIT_8253_CMD_OPMODE_OFFSET
+    22 00000016 0C30                       or   al, PIT_8253_LOHI_ACCESS_MODE
+    23 00000018 08D0                       or   al, dl
+    24 0000001A 665A                       pop  dx
+    25 0000001C E643                       out  PIT_8253_CMD_PORT, al
+    26 0000001E 6683C240                   add  dx, PIT_8253_CHANNEL_BASE_DATA_PORT
+    27 00000022 66B8F034                   mov  ax, word 1193200    ;100 [ms] * 1.19318[MHz] = 119320   
+    27          ******************       warning: word data exceeds bounds [-w+number-overflow]
+    28 00000026 EE                         out  dx, al
+    29 00000027 88E0                       mov  al, ah
+    30 00000029 EE                         out  dx, al
+    31 0000002A 31C0                       xor  eax, eax
+    32 0000002C EB05                       jmp .return
+    33                                  .bad_channel:
+    34 0000002E B801000000                 mov eax, 1
+    35                                  .return:
+    36 00000033 5D                         pop ebp
+    37 00000034 C3                         ret

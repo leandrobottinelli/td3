@@ -1,0 +1,209 @@
+     1                                  GLOBAL isr0_handler_DE
+     2                                  GLOBAL isr2_handler_NMI
+     3                                  GLOBAL isr3_handler_BP
+     4                                  GLOBAL isr4_handler_OF
+     5                                  GLOBAL isr5_handler_BR
+     6                                  GLOBAL isr6_handler_UD
+     7                                  GLOBAL isr7_handler_NM
+     8                                  GLOBAL isr8_handler_DF
+     9                                  GLOBAL isr9_handler
+    10                                  GLOBAL isr10_handler_TS
+    11                                  GLOBAL isr11_handler_NP
+    12                                  GLOBAL isr12_handler_SS
+    13                                  GLOBAL isr13_handler_GP
+    14                                  GLOBAL isr14_handler_PF
+    15                                  GLOBAL isr15_handler
+    16                                  GLOBAL isr16_handler_MF
+    17                                  GLOBAL isr17_handler_AC
+    18                                  GLOBAL isr18_handler_MC
+    19                                  GLOBAL isr19_handler_XF
+    20                                  GLOBAL isr32_handler_PIT
+    21                                  GLOBAL isr33_handler_KEYBOARD
+    22                                  
+    23                                  
+    24                                  
+    25                                  ;GLOBAL POLLING
+    26                                  GLOBAL LECTURA_TECLA
+    27                                  EXTERN FIN
+    28                                  EXTERN __INICIO_RAM_TECLADO_RUTINA
+    29                                  EXTERN _flag_int_teclado
+    30                                  EXTERN _CONTADOR_TIMER
+    31                                  
+    32                                  
+    33                                  %define _PUERTO_TECLADO  0x64;
+    34                                  %define _PUERTO_TECLADO_CODIGO 0x60;
+    35                                  ;-------------------------------------------------------------------------------
+    36                                  
+    37                                  section .rutina_teclado_isr
+    38                                  USE32
+    39                                  
+    40                                  POLLING:
+    41                                  
+    42 00000000 E464                    in al, _PUERTO_TECLADO 
+    43 00000002 0FBAE000                bt eax, 0x00
+    44 00000006 73F8                    jnc POLLING
+    45                                  
+    46                                  LECTURA_TECLA:
+    47                                  
+    48 00000008 E460                    in al, _PUERTO_TECLADO_CODIGO
+    49 0000000A 660FBAE007              bt ax, 0x7                       ;Me fijo si la tecla fue presionada o soltada
+    50 0000000F 72EF                    jc POLLING                       ;Me quedo solo con la tecla persionada
+    51                                  
+    52                                  ;xchg bx,bx
+    53 00000011 C3                      ret
+    54                                  
+    55                                  
+    56                                  ;jmp CARGADO_TABLA
+    57                                  
+    58                                  
+    59                                  ;CARGADO_TABLA:
+    60                                  
+    61                                  ;push ax
+    62                                  ;call CARGAR_TABLA
+    63                                  ;pop ax
+    64                                  ;ret
+    65                                  
+    66                                  
+    67                                  ;---------------------------------------------------------------------
+    68                                  ; Handlers ISRs
+    69                                  
+    70                                  default_isr:
+    71 00000012 90                         nop
+    72 00000013 6687DB                     xchg bx,bx
+    73 00000016 90                         nop
+    74 00000017 F4                         hlt
+    75                                  
+    76                                  
+    77                                  isr0_handler_DE:
+    78 00000018 BA00000000                 mov edx, 0
+    79 0000001D EBF3                       jmp default_isr
+    80                                  
+    81                                  
+    82                                  isr2_handler_NMI:
+    83 0000001F BA02000000                 mov edx, 2
+    84 00000024 EBEC                       jmp default_isr
+    85                                  
+    86                                  
+    87                                  isr3_handler_BP:
+    88 00000026 BA03000000                 mov edx, 3
+    89 0000002B EBE5                       jmp default_isr
+    90                                  
+    91                                  
+    92                                  isr4_handler_OF:
+    93 0000002D BA04000000                 mov edx, 4
+    94 00000032 EBDE                       jmp default_isr
+    95                                  
+    96                                  
+    97                                  isr5_handler_BR:
+    98 00000034 BA05000000                 mov edx, 5
+    99 00000039 EBD7                       jmp default_isr
+   100                                  
+   101                                  
+   102                                  isr6_handler_UD:
+   103 0000003B BA06000000                 mov edx, 6
+   104 00000040 EBD0                       jmp default_isr
+   105                                  
+   106                                  
+   107                                  isr7_handler_NM:
+   108 00000042 BA07000000                 mov edx, 7
+   109 00000047 EBC9                       jmp default_isr
+   110                                  
+   111                                  
+   112                                  isr8_handler_DF:
+   113 00000049 BA08000000                 mov edx, 8
+   114 0000004E EBC2                       jmp default_isr
+   115                                  
+   116                                  isr9_handler:
+   117 00000050 BA09000000                 mov edx, 9
+   118 00000055 EBBB                       jmp default_isr
+   119                                  
+   120                                  
+   121                                  isr10_handler_TS:
+   122 00000057 BA0A000000                 mov edx, 10
+   123 0000005C EBB4                       jmp default_isr
+   124                                  
+   125                                  
+   126                                  isr11_handler_NP:
+   127 0000005E BA0B000000                 mov edx, 11
+   128 00000063 EBAD                       jmp default_isr
+   129                                  
+   130                                  
+   131                                  isr12_handler_SS:
+   132 00000065 BA0C000000                 mov edx, 12
+   133 0000006A EBA6                       jmp default_isr
+   134                                  
+   135                                  
+   136                                  isr13_handler_GP:
+   137 0000006C BA0D000000                 mov edx, 13
+   138 00000071 EB9F                       jmp default_isr
+   139                                  
+   140                                  
+   141                                  isr14_handler_PF:
+   142 00000073 BA0E000000                 mov edx, 14
+   143 00000078 EB98                       jmp default_isr
+   144                                  
+   145                                  isr15_handler:
+   146 0000007A BA0F000000                 mov edx, 15
+   147 0000007F EB91                       jmp default_isr
+   148                                  
+   149                                  isr16_handler_MF:
+   150 00000081 BA10000000                 mov edx, 16
+   151 00000086 EB8A                       jmp default_isr
+   152                                  
+   153                                  
+   154                                  isr17_handler_AC:
+   155 00000088 BA11000000                 mov edx, 17
+   156 0000008D EB83                       jmp default_isr
+   157                                  
+   158                                  
+   159                                  isr18_handler_MC:
+   160 0000008F BA12000000                 mov edx, 18
+   161 00000094 E979FFFFFF                 jmp default_isr
+   162                                  
+   163                                  
+   164                                  isr19_handler_XF:
+   165 00000099 BA13000000                 mov edx, 19
+   166 0000009E E96FFFFFFF                 jmp default_isr
+   167                                  
+   168                                  
+   169                                  isr32_handler_PIT:
+   170 000000A3 60                         pushad
+   171 000000A4 A1[00000000]               mov eax, [_CONTADOR_TIMER]
+   172 000000A9 40                         inc eax
+   173 000000AA A3[00000000]               mov [_CONTADOR_TIMER], eax
+   174 000000AF B020                       mov al,0x20                ;Codigo para avisar al PIC que atendi la int 
+   175 000000B1 E620                       out 0x20,al
+   176 000000B3 61                         popad
+   177 000000B4 CF                         iret
+   178                                  
+   179                                  isr33_handler_KEYBOARD:
+   180                                  
+   181 000000B5 60                         pushad
+   182 000000B6 66B80100                   mov ax, 0x1
+   183 000000BA 66A3[00000000]             mov [_flag_int_teclado],ax ;Flag para saber que interrumpio el teclado
+   184 000000C0 B020                       mov al,0x20                ;Codigo para avisar al PIC que atendi la int 
+   185 000000C2 E620                       out 0x20,al
+   186 000000C4 61                         popad
+   187 000000C5 CF                         iret
+   188                                  
+   189                                  
+   190                                  
+   191                                  
+   192                                  
+   193                                  
+   194                                  
+   195                                  
+   196                                  
+   197                                  
+   198                                  
+   199                                  
+   200                                  
+   201                                  
+   202                                  
+   203                                  
+   204                                  
+   205                                  
+   206                                  
+   207                                  
+   208                                  
+   209                                  

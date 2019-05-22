@@ -1,0 +1,157 @@
+     1                                  GLOBAL CARGAR_TABLA
+     2                                  GLOBAL CARGAR_TABLA_2
+     3                                  GLOBAL SUMA_TABLA_DIGITOS
+     4                                  
+     5                                  EXTERN _CONTADOR_TECLAS
+     6                                  EXTERN _ENTRADA_TABLA
+     7                                  EXTERN _CONTADOR_TECLAS_BYTES
+     8                                  EXTERN __INICIO_RAM_TABLA_DIGITOS
+     9                                  EXTERN _flag_16_TECLAS
+    10                                  EXTERN _NUMERO_TOTAL
+    11                                  
+    12                                  section .rutinas
+    13                                  USE32
+    14                                  
+    15                                  
+    16                                  ;-----------------------------------------------------------------------------------
+    17                                  ;-----------------------------------------------------------------------------------
+    18                                  
+    19                                  CARGAR_TABLA:
+    20                                  
+    21 00000000 89E5                        mov ebp, esp  
+    22 00000002 8A4504                      mov al, [ebp + 4]						    ;Recibo por la pila, el valor de la tecla
+    23 00000005 8B0D[00000000]              mov ecx, [_CONTADOR_TECLAS]     		    ;Cargo valor del contador,ultima pocision de tecla guardada
+    24 0000000B 8881[00000000]              mov [__INICIO_RAM_TABLA_DIGITOS + ecx], al  ;Guardo la tecla en el vector
+    25                                                                     				; de la tabla, indicada por el contador
+    26 00000011 41                          inc ecx
+    27 00000012 83F910                      cmp ecx, 0x10		                        ;Comparo si llego a 16 bytes
+    28 00000015 7402                        jz RESET_CONTADOR
+    29 00000017 EB10                        jmp INCREMENTO_CONTADOR
+    30                                  
+    31                                  
+    32                                      RESET_CONTADOR:
+    33 00000019 66BB0100                    mov bx, 0x01			
+    34 0000001D 66891D[00000000]            mov [_flag_16_TECLAS], bx	;Activo el flag de que supero las 16 teclas
+    35                                  
+    36 00000024 B900000000                  mov ecx, 0x0				;Reinicio contador a 0, para poder seguir
+    37                                      							;guardando en el mismo vector
+    38                                  
+    39                                      INCREMENTO_CONTADOR:
+    40 00000029 890D[00000000]              mov [_CONTADOR_TECLAS], ecx     ;Guardo el valor del contador incrementado
+    41 0000002F C3                          ret                            ;para apuntar al siguiente digito de la tabla
+    42                                  
+    43                                  ;-----------------------------------------------------------------------------------
+    44                                  ;-----------------------------------------------------------------------------------
+    45                                  
+    46                                  
+    47                                  CARGAR_TABLA_2:
+    48                                  
+    49 00000030 8B0D[00000000]          	mov ecx, [_flag_16_TECLAS]
+    50 00000036 83F901                      cmp ecx, 0x01				;Chequeo si hay 16 teclas y el contador di
+    51 00000039 7408                        jz TECLAS_16 				;la vuelta, ultimo bit paso 0xF
+    52                                  
+    53 0000003B 8B0D[00000000]              mov ecx,[_CONTADOR_TECLAS]	; Si hay menos de 16, cargo la cantidad de teclas
+    54 00000041 EB1A                        jmp CEROS 					
+    55                                  
+    56                                      
+    57                                     	TECLAS_16:			         
+    58 00000043 66BB0000                	mov bx, 0x0					 ;Reseteo el flag de la funcion CARGAR_TABLA
+    59 00000047 66891D[00000000]        	mov [_flag_16_TECLAS], bx	 ;que me indica que hubo mas de 16 teclas.
+    60 0000004E B910000000                  mov ecx, 0x10				 ;Cargo que la cantidad de teclas son 16
+    61 00000053 D1E9                        shr ecx, 0x1                 ;Divido por 2, porque voy a juntar de a 2 hexas en 1 byte
+    62 00000055 8B15[00000000]              mov edx, [_CONTADOR_TECLAS_BYTES] ;Cargo la pocision de la entrada de la tabla
+    63 0000005B EB44                        jmp GUARDADO_NUMERO
+    64                                  
+    65                                  
+    66                                  
+    67                                  
+    68                                  	CEROS:				;Completo las pocisiones de las teclas faltantes a 16 con 0				
+    69 0000005D B000                    	mov al, 0x00			
+    70 0000005F 8881[00000000]          	mov [__INICIO_RAM_TABLA_DIGITOS + ecx], al             
+    71                                  
+    72 00000065 41                          inc ecx
+    73 00000066 83F910                  	cmp ecx, 0x10 		;Chequeo si llegue a la tecla numero 16
+    74 00000069 7402                    	jz PARIDAD
+    75 0000006B EBF0                    	jmp CEROS
+    76                                      
+    77                                  	
+    78                                  
+    79                                  	PARIDAD:    
+    80 0000006D 8B0D[00000000]          	mov ecx,[_CONTADOR_TECLAS] 
+    81 00000073 F7C101000000               	test ecx,1  				; Compruebo si el numero de teclas ingresadas
+    82 00000079 7502                       	jnz IMPAR       			; son pares o impares
+    83 0000007B EB1C                       	jmp PAR
+    84                                     	
+    85                                  
+    86                                     	IMPAR:
+    87 0000007D 8B15[00000000]             	mov edx, [_CONTADOR_TECLAS_BYTES]
+    88 00000083 42                         	inc edx
+    89                                  
+    90 00000084 A0[00000000]               	mov al,[__INICIO_RAM_TABLA_DIGITOS] ;Cargo la tecla mas significativa
+    91 00000089 8B1D[00000000]             	mov ebx,[_ENTRADA_TABLA] 
+    92 0000008F 41                         	inc ecx  					;Lo hago PAR redondeando para arriba 
+    93 00000090 D1E9                    	shr ecx, 0x1 				;Divido por 2, porque voy a juntar de a 2 hexas en 1 byte
+    94                                  
+    95 00000092 88440BFF                    mov [ebx + ecx - 0x1], al	;Guardo en la primera pocision, la primer tecla
+    96 00000096 49                          dec ecx						;que tiene cargada la letra y un cero.
+    97 00000097 EB08                       	jmp GUARDADO_NUMERO
+    98                                  
+    99                                  
+   100                                  
+   101                                     	PAR:
+   102 00000099 8B15[00000000]             	mov edx, [_CONTADOR_TECLAS_BYTES]
+   103 0000009F D1E9                        shr ecx, 0x1 ;Divido por 2, porque voy a juntar de a 2 hexas en 1 byte
+   104                                  
+   105                                  
+   106                                  	GUARDADO_NUMERO: 
+   107                                  
+   108 000000A1 8A82[00000000]             	mov al,[__INICIO_RAM_TABLA_DIGITOS + edx] ;Recorro las tecla y la siguiente
+   109 000000A7 8A9A[01000000]             	mov bl,[__INICIO_RAM_TABLA_DIGITOS + edx + 0x1]
+   110 000000AD 83C202                     	add edx, 0x2 ;En el siguiente ciclo, agarro las 2 siguientes
+   111 000000B0 8915[00000000]             	mov [_CONTADOR_TECLAS_BYTES], edx 
+   112                                  
+   113                                  
+   114                                  
+   115 000000B6 C0E004                     	shl al, 0x4  				;Desplazo el primer byte 4 pocisiones
+   116 000000B9 08D8                       	or al, bl	 				;y sumo el hexa de la primera tecla y la segunda
+   117                                  
+   118 000000BB 8B1D[00000000]             	mov ebx,[_ENTRADA_TABLA]    ;Cargo el valor de que entrada de la Tabla estoy
+   119 000000C1 88440BFF                    mov [ebx + ecx - 0x1], al 	;Guardo el byte de las dos teclas
+   120 000000C5 49                          dec ecx
+   121 000000C6 75D9                        jne GUARDADO_NUMERO ;Repito hasta que el contador de cantidad de teclas llegue a cero
+   122 000000C8 EB00                        jmp RESET_CONTADOR_2
+   123                                  
+   124                                  
+   125                                      RESET_CONTADOR_2:
+   126 000000CA 83C110                      add ecx, 0x10  
+   127 000000CD BA00000000                  mov edx, 0x00  
+   128 000000D2 8915[00000000]              mov [_CONTADOR_TECLAS_BYTES], edx ; Reseteo el contador que barre las teclas de a dos
+   129 000000D8 8915[00000000]              mov [_CONTADOR_TECLAS], edx 	  ; Reseteo el contador con la cantidad de teclas
+   130 000000DE 010D[00000000]              add [_ENTRADA_TABLA], ecx         ; Guardo el valor del contador incrementado
+   131 000000E4 C3                          ret                               ; para apuntar a la siguiente entrada de la tabla
+   132                                  ;----------------------------------------------------------------------------------------------------
+   133                                  ;----------------------------------------------------------------------------------------------------
+   134                                  
+   135                                  
+   136                                  section .tarea_1
+   137                                  
+   138                                  SUMA_TABLA_DIGITOS:
+   139                                  
+   140                                      
+   141 00000000 BA[10000000]                mov edx, __INICIO_RAM_TABLA_DIGITOS + 0x10
+   142 00000005 6687DB                      xchg bx, bx
+   143                                  
+   144                                  
+   145                                      LP:
+   146 00000008 8B02                        mov eax,[edx]
+   147 0000000A 0105[00000000]              add [_NUMERO_TOTAL], eax
+   148                                  
+   149 00000010 83C210                      add edx , 0x10
+   150 00000013 3B15[00000000]              cmp edx, [_ENTRADA_TABLA]
+   151 00000019 7402                        jz RESULTADO
+   152                                      ;mov [_NUMERO_TOTAL], eax
+   153 0000001B EBEB                        jmp LP
+   154                                  
+   155                                      RESULTADO:
+   156 0000001D 90                          nop
+   157 0000001E C3                          ret

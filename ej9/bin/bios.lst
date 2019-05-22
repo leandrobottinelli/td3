@@ -1,0 +1,398 @@
+     1                                  ;Pasos del programa:
+     2                                  ;-------------------
+     3                                    ; Entro a modo_proteg
+     4                                    ; Copio la funcion copy en rutinas(RAM)
+     5                                    ; Llamo a la funcion copy para que me copie la ROM a nucleo (RAM)
+     6                                  
+     7                                    ; Espero interrupcion de tecla, mientras tengo el flag desactivado
+     8                                    ; Cuando se produce la interrucion, la isr correspondiente activa el flag
+     9                                    ; LLamo a la funcion LECTURA_TECLA y obtengo el codigo de la tecla
+    10                                    ; En el main comparo cada caso, solo validando teclas con valores en hexa
+    11                                    ; Si la tecla es valida, la guardo en un vector 16 posiciones, al comienzo de la tabla.
+    12                                    ; Cuando se presiona la tecla enter, dejo de guardar teclas.
+    13                                    ; Si el numero de teclas es 16 o mas, las guardo desde la primera como la MSB hasta la ultima.
+    14                                    ; Si es menor a 16, hago lo mismo pero rellenando con ceros adelante.
+    15                                    ; Previo compruebo si es par o impar.
+    16                                    ; Voy guardando cada vector de teclas, ya acomodados uno debajo de otro en la tabla.
+    17                                  
+    18                                    ; NOTA: Las teclas las paso a traves de la pila 
+    19                                    ; Falta ver caso que me presionen enter sin tocar otra tecla.
+    20                                    ; Falta acomodar, si se excede de 16 teclas el orden de como se guarda
+    21                                  ;-----------------------------------------------------------------------------------
+    22                                  
+    23                                  
+    24                                  EXTERN __FIN_PILA
+    25                                  EXTERN __SIZE_PILA
+    26                                  
+    27                                  EXTERN COPY_INIT
+    28                                  EXTERN POLLING
+    29                                  
+    30                                  EXTERN __INICIO_RAM_RUTINAS
+    31                                  EXTERN __INICIO_ROM_RUTINAS
+    32                                  EXTERN __INICIO_ROM
+    33                                  EXTERN __INICIO_RAM_NUCLEO
+    34                                  EXTERN __INICIO_ROM_NUCLEO
+    35                                  
+    36                                  EXTERN __INICIO_RAM_SYS_TABLES
+    37                                  EXTERN __INICIO_ROM_SYS_TABLES
+    38                                  EXTERN __LONGITUD_SYS_TABLES
+    39                                  
+    40                                  EXTERN __INICIO_RAM_ISR
+    41                                  EXTERN __INICIO_ROM_ISR
+    42                                  
+    43                                  EXTERN __INICIO_ROM_TABLA_DIGITOS 
+    44                                  EXTERN __INICIO_RAM_TABLA_DIGITOS 
+    45                                  
+    46                                  EXTERN __INICIO_RAM_TAREA_1
+    47                                  EXTERN __INICIO_ROM_TAREA_1
+    48                                  
+    49                                  EXTERN __INICIO_ROM_DATOS 
+    50                                  EXTERN __INICIO_RAM_DATOS
+    51                                  
+    52                                  
+    53                                  
+    54                                  EXTERN __LONGITUD_RUTINAS
+    55                                  EXTERN __LONGITUD_ROM
+    56                                  EXTERN __LONGITUD_ISR
+    57                                  EXTERN __LONGITUD_DATOS
+    58                                  EXTERN __LONGITUD_TAREA_1
+    59                                  
+    60                                  GLOBAL _CONTADOR_TECLAS
+    61                                  GLOBAL _ENTRADA_TABLA
+    62                                  GLOBAL _CONTADOR_TECLAS_BYTES
+    63                                  GLOBAL _CONTADOR_TIMER
+    64                                  GLOBAL _NUMERO_TOTAL
+    65                                  
+    66                                  GLOBAL FIN
+    67                                  
+    68                                  EXTERN img_idtr
+    69                                  EXTERN img_gdtr_32
+    70                                  
+    71                                  EXTERN cs_sel_32
+    72                                  EXTERN ds_sel_32
+    73                                  
+    74                                  EXTERN LECTURA_TECLA
+    75                                  EXTERN CARGAR_TABLA
+    76                                  EXTERN CARGAR_TABLA_2
+    77                                  EXTERN SUMA_TABLA_DIGITOS
+    78                                  
+    79                                  GLOBAL cs_sel
+    80                                  GLOBAL ds_sel
+    81                                  GLOBAL _flag_int_teclado
+    82                                  GLOBAL _flag_16_TECLAS
+    83                                  
+    84                                  
+    85                                  EXTERN _pic_configure
+    86                                  EXTERN _pit_configure
+    87                                  
+    88                                  
+    89                                  ;----------------------------------------------------------------------------------
+    90                                  %define TECLA_0  0x0B
+    91                                  %define TECLA_1  0x02
+    92                                  %define TECLA_2  0x03
+    93                                  %define TECLA_3  0x04
+    94                                  %define TECLA_4  0x05
+    95                                  %define TECLA_5  0x06
+    96                                  %define TECLA_6  0x07
+    97                                  %define TECLA_7  0x08
+    98                                  %define TECLA_8  0x09
+    99                                  %define TECLA_9  0x0A
+   100                                  %define TECLA_A  0x1E
+   101                                  %define TECLA_B  0x30
+   102                                  %define TECLA_C  0x2E
+   103                                  %define TECLA_D  0x20
+   104                                  %define TECLA_E  0x12
+   105                                  %define TECLA_F  0x21
+   106                                  %define TECLA_ENTER  0x1C
+   107                                  
+   108                                  %define BKP xchg bx,bx
+   109                                  
+   110                                  ;----------------------------------------------------------------------------------
+   111                                  
+   112                                  
+   113                                  
+   114                                  section .reset
+   115                                  arranque:
+   116                                  USE16
+   117 00000000 B80000                  mov ax,0
+   118 00000003 FFE0                    jmp ax
+   119                                  ;salto a inicio16
+   120 00000005 00<rept>                times 16-($-arranque) db 0
+   121                                  
+   122                                  section .init
+   123                                  
+   124 00000000 EB1E                    jmp inicio
+   125                                  
+   126                                  gdt:
+   127 00000002 0000000000000000                  db 0,0,0,0,0,0,0,0  ;Descriptor nulo
+   128                                  ds_sel    equ $-gdt
+   129 0000000A FFFF00000092CF00                  db 0xFF, 0xFF, 0, 0, 0, 0x92, 0xCF, 0
+   130                                  cs_sel    equ $-gdt
+   131 00000012 FFFF0000009ACF00                  db 0xFF, 0xFF, 0, 0, 0, 0x9A, 0xCF, 0
+   132                                  
+   133                                  long_gdt equ $-gdt
+   134                                  
+   135                                  
+   136                                  img_gdtr:
+   137 0000001A 1700                        dw long_gdt-1
+   138 0000001C [02000000]                  dd gdt
+   139                                  
+   140                                  
+   141                                  
+   142                                  inicio:
+   143 00000020 FA                        cli                ;Deshabilito interrupciones
+   144 00000021 66                        db 0x66            ;Requerido para direcciones mayores
+   145 00000022 2E0F0116[1A00]            lgdt [cs:img_gdtr] ;que 0x00FFFFFFF. 
+   146 00000028 0F20C0                    mov eax,cr0        ;Habiltación bit de modo protegido. 
+   147 0000002B 6683C801                  or eax,1
+   148 0000002F 0F22C0                    mov cr0,eax
+   149                                   	
+   150 00000032 66EA[3A000000]1000       jmp dword cs_sel:modo_proteg
+   151                                  
+   152                                  
+   153                                   
+   154                                  USE32
+   155                                  modo_proteg:
+   156 0000003A 6687DB                    xchg bx,bx
+   157                                  
+   158 0000003D 66B80800                  mov ax,ds_sel
+   159 00000041 8ED8                      mov ds,ax
+   160 00000043 8ED0                      mov ss,ax
+   161 00000045 BC[00000000]              mov esp,__FIN_PILA
+   162                                  
+   163                                  
+   164 0000004A 68[00000000]              push __INICIO_ROM_RUTINAS
+   165 0000004F 68[00000000]              push __INICIO_RAM_RUTINAS
+   166 00000054 68[00000000]              push __LONGITUD_RUTINAS
+   167                                  
+   168 00000059 E8(00000000)              call __INICIO_ROM_RUTINAS ;Copio la funcion copy en RAM a mano
+   169                                  
+   170 0000005E 58                        pop eax
+   171 0000005F 58                        pop eax
+   172 00000060 58                        pop eax
+   173                                  
+   174                                  
+   175                                  
+   176 00000061 68[00000000]              push __INICIO_ROM_NUCLEO
+   177 00000066 68[00000000]              push __INICIO_RAM_NUCLEO
+   178 0000006B 68[00000000]              push __LONGITUD_ROM
+   179                                  
+   180                                  
+   181 00000070 E8(00000000)              call COPY_INIT            ;Copio toda la ROM en RAM desde
+   182 00000075 58                        pop eax                   ;funcion copy en RAM
+   183 00000076 58                        pop eax
+   184 00000077 58                        pop eax
+   185                                  
+   186                                  
+   187                                  
+   188                                  
+   189 00000078 E9(00000000)              jmp nucleos
+   190                                   
+   191                                  
+   192                                   ;----------------------------------------------------------------------
+   193                                  
+   194                                  section .nucleo
+   195                                  
+   196                                  
+   197                                  nucleos:   
+   198                                  
+   199 00000000 68[00000000]              push __INICIO_ROM_ISR
+   200 00000005 68[00000000]              push __INICIO_RAM_ISR
+   201 0000000A 68[00000000]              push __LONGITUD_ISR 
+   202                                  
+   203 0000000F E8(00000000)              call COPY_INIT
+   204                                    
+   205 00000014 58                        pop eax
+   206 00000015 58                        pop eax
+   207 00000016 58                        pop eax
+   208                                  
+   209                                  
+   210                                  
+   211                                  
+   212 00000017 68[00000000]              push __INICIO_ROM_SYS_TABLES
+   213 0000001C 68[00000000]              push __INICIO_RAM_SYS_TABLES
+   214 00000021 68[00000000]              push __LONGITUD_SYS_TABLES
+   215                                  
+   216 00000026 E8(00000000)              call COPY_INIT              ;Copio la GDT e IDT a sys_tables(RAM)
+   217                                      
+   218 0000002B 58                        pop eax
+   219 0000002C 58                        pop eax
+   220 0000002D 58                        pop eax
+   221                                  
+   222 0000002E 68[00000000]              push __INICIO_ROM_TAREA_1
+   223 00000033 68[00000000]              push __INICIO_RAM_TAREA_1
+   224 00000038 68[00000000]              push __LONGITUD_TAREA_1
+   225                                  
+   226 0000003D E8(00000000)              call COPY_INIT              ;Copio la tarea_1 a (RAM)
+   227                                      
+   228 00000042 58                        pop eax
+   229 00000043 58                        pop eax
+   230 00000044 58                        pop eax
+   231                                  
+   232                                  
+   233                                  
+   234 00000045 68[00000000]              push __INICIO_ROM_DATOS
+   235 0000004A 68[00000000]              push __INICIO_RAM_DATOS
+   236 0000004F 68[00000000]              push __LONGITUD_DATOS
+   237                                  
+   238 00000054 E8(00000000)              call COPY_INIT                ;Copio seccion de datos. Contador de la tabla de digitos
+   239                                    
+   240 00000059 58                        pop eax
+   241 0000005A 58                        pop eax
+   242 0000005B 58                        pop eax
+   243                                  
+   244 0000005C 2E0F0115[00000000]      lgdt [cs:img_gdtr_32] 
+   245                                  
+   246 00000064 0F011D[00000000]        lidt [img_idtr]   
+   247                                  
+   248 0000006B E8(00000000)            call _pic_configure
+   249 00000070 E8(00000000)            call _pit_configure
+   250                                  
+   251 00000075 FB                      sti
+   252 00000076 6687DB                  xchg bx, bx
+   253                                  
+   254                                  
+   255                                  WHILE:
+   256                                  
+   257 00000079 668B1D[18000000]              mov bx, [_flag_int_teclado]
+   258 00000080 6683FB00                      cmp bx, 0x00
+   259 00000084 74F3                          jz WHILE
+   260                                  
+   261                                  
+   262 00000086 E8(00000000)                  call LECTURA_TECLA
+   263                                        
+   264                                  
+   265                                      T_0:
+   266 0000008B 3C0B                          cmp al, TECLA_0
+   267 0000008D B300                          mov bl, 0x0 ; 
+   268 0000008F 7460                          jz GUARDADO_HEXA
+   269                                  
+   270                                      T_1:
+   271 00000091 3C02                          cmp al, TECLA_1
+   272 00000093 B301                          mov bl, 0x1 ;  ; 
+   273 00000095 745A                          jz GUARDADO_HEXA
+   274                                  
+   275                                      T_2:
+   276 00000097 3C03                          cmp al, TECLA_2 ; 
+   277 00000099 B302                          mov bl, 0x2 ; 
+   278 0000009B 7454                          jz GUARDADO_HEXA
+   279                                  
+   280                                      T_3:
+   281 0000009D 3C04                          cmp al, TECLA_3 ; 
+   282 0000009F B303                          mov bl, 0x3
+   283 000000A1 744E                          jz GUARDADO_HEXA   
+   284                                  
+   285                                      T_4:
+   286 000000A3 3C05                          cmp al, TECLA_4
+   287 000000A5 B304                          mov bl, 0x4 ; 
+   288 000000A7 7448                          jz GUARDADO_HEXA 
+   289                                  
+   290                                      T_5:
+   291 000000A9 3C06                          cmp al, TECLA_5 ; 
+   292 000000AB B305                          mov bl, 0x5
+   293 000000AD 7442                          jz GUARDADO_HEXA   
+   294                                  
+   295                                      T_6:
+   296 000000AF 3C07                          cmp al, TECLA_6
+   297 000000B1 B306                          mov bl, 0x6 ; 
+   298 000000B3 743C                          jz GUARDADO_HEXA   
+   299                                  
+   300                                      T_7:
+   301 000000B5 3C08                          cmp al, TECLA_7 ; 
+   302 000000B7 B307                          mov bl, 0x7
+   303 000000B9 7436                          jz GUARDADO_HEXA     
+   304                                      
+   305                                      T_8:
+   306 000000BB 3C09                          cmp al, TECLA_8
+   307 000000BD B308                          mov bl, 0x8 ; 
+   308 000000BF 7430                          jz GUARDADO_HEXA
+   309                                      
+   310                                      T_9:
+   311 000000C1 3C0A                          cmp al, TECLA_9 
+   312 000000C3 B309                          mov bl, 0x9 
+   313 000000C5 742A                          jz GUARDADO_HEXA  
+   314                                      
+   315                                      T_A:
+   316 000000C7 3C1E                          cmp al, TECLA_A ; 
+   317 000000C9 B30A                          mov bl, 0xA
+   318 000000CB 7424                          jz GUARDADO_HEXA
+   319                                      
+   320                                      T_B:
+   321 000000CD 3C30                          cmp al, TECLA_B 
+   322 000000CF B30B                          mov bl, 0xB 
+   323 000000D1 741E                          jz GUARDADO_HEXA  
+   324                                      
+   325                                      T_C:
+   326 000000D3 3C2E                          cmp al, TECLA_C ; 
+   327 000000D5 B30C                          mov bl, 0xC
+   328 000000D7 7418                          jz GUARDADO_HEXA 
+   329                                      
+   330                                      T_D:
+   331 000000D9 3C20                          cmp al, TECLA_D 
+   332 000000DB B30D                          mov bl, 0xD
+   333 000000DD 7412                          jz GUARDADO_HEXA 
+   334                                      
+   335                                      T_E:
+   336 000000DF 3C12                          cmp al, TECLA_E 
+   337 000000E1 B30E                          mov bl, 0xE
+   338 000000E3 740C                          jz GUARDADO_HEXA 
+   339                                  
+   340                                      T_F:
+   341 000000E5 3C21                          cmp al, TECLA_F 
+   342 000000E7 B30F                          mov bl, 0xF
+   343 000000E9 7406                          jz GUARDADO_HEXA 
+   344                                  
+   345                                      T_ENTER:
+   346 000000EB 3C1C                          cmp al, TECLA_ENTER ; 
+   347 000000ED 741D                          jz FIN
+   348                                  
+   349                                  
+   350 000000EF EB0B                      jmp SIGUIENTE
+   351                                  
+   352                                  
+   353                                      GUARDADO_HEXA:
+   354 000000F1 6653                          push bx
+   355 000000F3 E8(00000000)                  call CARGAR_TABLA
+   356 000000F8 665B                          pop bx
+   357 000000FA EB00                          jmp SIGUIENTE
+   358                                  
+   359                                  
+   360                                      SIGUIENTE:
+   361                                      
+   362 000000FC 66B80000                      mov ax, 0x0
+   363 00000100 66A3[18000000]                mov [_flag_int_teclado], ax
+   364 00000106 FB                            sti
+   365 00000107 E96DFFFFFF                    jmp WHILE
+   366                                  
+   367                                  
+   368                                      FIN:
+   369 0000010C E8(00000000)                  call CARGAR_TABLA_2
+   370 00000111 66B80000                      mov ax, 0x0
+   371 00000115 66A3[18000000]                mov [_flag_int_teclado], ax
+   372 0000011B 6687DB                        BKP
+   373 0000011E A3[30000000]                  mov [_NUMERO_TOTAL], eax
+   374 00000123 E8(00000000)                  call SUMA_TABLA_DIGITOS
+   375 00000128 FB                            sti 
+   376 00000129 6687DB                        BKP
+   377                                  
+   378                                  
+   379 0000012C E948FFFFFF              jmp WHILE
+   380                                  
+   381                                  
+   382                                  
+   383                                  
+   384                                  ;----------------------------------------------------------------------
+   385                                  section .datos
+   386                                  
+   387 00000000 0000000000000000        _CONTADOR_TECLAS: dq 0x00       ;Contador de teclas validas presionadas
+   388 00000008 0000000000000000        _CONTADOR_TECLAS_BYTES: dq 0x0  ;Contador para tomar de a dos hexas, y ponerlos en un byte
+   389 00000010 [1000000000000000]      _ENTRADA_TABLA: dq __INICIO_RAM_TABLA_DIGITOS + 0x10 ;Puntero a la primera entrada de tabla libre
+   389          ******************       warning: 64-bit unsigned relocation zero-extended from 32 bits
+ [-w+zext-reloc]
+   390 00000018 0000000000000000        _flag_int_teclado: dq 0x00      ;Flag si interrupio el teclado
+   391 00000020 0000000000000000        _flag_16_TECLAS: dq 0x00        ;Flag si se presionaron mas de 16 teclas
+   392                                  
+   393 00000028 0000000000000000        _CONTADOR_TIMER: dq 0x00        ;Contador de interrupciones del PIT
+   394 00000030 0000000000000000        _NUMERO_TOTAL: dq 0x00
+   395                                   
+   396                                  
