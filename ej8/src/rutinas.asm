@@ -32,7 +32,7 @@ CARGAR_TABLA:
     mov [_flag_16_TECLAS], bx	;Activo el flag de que supero las 16 teclas
 
     mov ecx, 0x0				;Reinicio contador a 0, para poder seguir
-    							;guardando en el mismo vector
+    							      ;guardando en el mismo vector
 
     INCREMENTO_CONTADOR:
     mov [_CONTADOR_TECLAS], ecx     ;Guardo el valor del contador incrementado

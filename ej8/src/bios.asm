@@ -1,10 +1,18 @@
 ;Pasos del programa:
-;-------------------
+;---------------------------------------------------------------------------------------
   ; Entro a modo_proteg
   ; Copio la funcion copy en rutinas(RAM)
   ; Llamo a la funcion copy para que me copie la ROM a nucleo (RAM)
 
   ; Espero interrupcion de tecla, mientras tengo el flag desactivado
+  ; Espero interrupcion de timer, mientras tengo el flag desactivado
+
+  ; Si el flag fue de timer:
+  ; Incremento el CONTADOR_TIMER cada vez que se activa el flag (10 ms)
+  ; Cuando llego a las 10 veces, Incremento _CONTADOR_TIMER_2 
+  ; Logro contar cuantas veces paso 100 ms
+
+  ; Si el flag fue de teclado:
   ; Cuando se produce la interrucion, la isr correspondiente activa el flag
   ; LLamo a la funcion LECTURA_TECLA y obtengo el codigo de la tecla
   ; En el main comparo cada caso, solo validando teclas con valores en hexa
@@ -16,7 +24,6 @@
   ; Voy guardando cada vector de teclas, ya acomodados uno debajo de otro en la tabla.
 
   ; NOTA: Las teclas las paso a traves de la pila 
-  ; Falta ver caso que me presionen enter sin tocar otra tecla.
   ; Falta acomodar, si se excede de 16 teclas el orden de como se guarda
 ;-----------------------------------------------------------------------------------
 
@@ -55,7 +62,7 @@ EXTERN __LONGITUD_DATOS
 GLOBAL _CONTADOR_TECLAS
 GLOBAL _ENTRADA_TABLA
 GLOBAL _CONTADOR_TECLAS_BYTES
-GLOBAL _CONTADOR_TIMER
+GLOBAL _flag_int_timer
 
 GLOBAL FIN
 
@@ -147,7 +154,7 @@ inicio:
  
 USE32
 modo_proteg:
-  xchg bx,bx
+  ;xchg bx,bx
 
   mov ax,ds_sel
   mov ds,ax
@@ -233,101 +240,132 @@ call _pic_configure
 call _pit_configure
 
 sti
-xchg bx, bx
+;xchg bx, bx
 
 
 WHILE:
 
-      mov bx, [_flag_int_teclado]
-      cmp bx, 0x00
-      jz WHILE
+      mov ax,[_flag_int_timer]          ; Me fijo si vencio timer
+      cmp ax, 0x01      
+      jz Cien_ms
+
+      mov bx, [_flag_int_teclado]       ; Me fijo si hubo tecla
+      cmp bx, 0x01
+      jz INT_TECLA
+      jmp WHILE
+
+  Cien_ms:
+      mov ax,0x00
+      mov [_flag_int_timer], ax         ; Reinicio el flag de timer
+
+      mov ax, [_CONTADOR_TIMER]         
+      cmp ax, 0x0A                      ; Me fijo si el timer vencio 10 veces 
+      jz VENCE_TIMER
+
+      mov eax,[_CONTADOR_TIMER]         ; Guardo cada 10 veces la base de tiempo
+      inc eax
+      mov [_CONTADOR_TIMER], eax
+      jmp WHILE
 
 
+  VENCE_TIMER:
+
+    mov ax, 0x0
+    mov [_CONTADOR_TIMER], ax
+    mov eax,[_CONTADOR_TIMER_2]
+    inc eax
+    
+    mov [_CONTADOR_TIMER_2], eax
+    JMP WHILE
+
+
+  INT_TECLA:
+     
       call LECTURA_TECLA
       
 
     T_0:
       cmp al, TECLA_0
-      mov bl, 0x0 ; 
+      mov bl, 0x0       ;Guardo el hexa de cada tecla     
       jz GUARDADO_HEXA
 
     T_1:
       cmp al, TECLA_1
-      mov bl, 0x1 ;  ; 
+      mov bl, 0x1 ;       ;Guardo el hexa de cada tecla   
       jz GUARDADO_HEXA
 
     T_2:
       cmp al, TECLA_2 ; 
-      mov bl, 0x2 ; 
+      mov bl, 0x2        ;Guardo el hexa de cada tecla   
       jz GUARDADO_HEXA
 
     T_3:
       cmp al, TECLA_3 ; 
-      mov bl, 0x3
+      mov bl, 0x3        ;Guardo el hexa de cada tecla   
       jz GUARDADO_HEXA   
 
     T_4:
       cmp al, TECLA_4
-      mov bl, 0x4 ; 
+      mov bl, 0x4        ;Guardo el hexa de cada tecla     
       jz GUARDADO_HEXA 
 
     T_5:
-      cmp al, TECLA_5 ; 
-      mov bl, 0x5
+      cmp al, TECLA_5  
+      mov bl, 0x5        ;Guardo el hexa de cada tecla   
       jz GUARDADO_HEXA   
 
     T_6:
       cmp al, TECLA_6
-      mov bl, 0x6 ; 
+      mov bl, 0x6        ;Guardo el hexa de cada tecla     
       jz GUARDADO_HEXA   
 
     T_7:
-      cmp al, TECLA_7 ; 
-      mov bl, 0x7
+      cmp al, TECLA_7  
+      mov bl, 0x7        ;Guardo el hexa de cada tecla   
       jz GUARDADO_HEXA     
     
     T_8:
       cmp al, TECLA_8
-      mov bl, 0x8 ; 
+      mov bl, 0x8        ;Guardo el hexa de cada tecla     
       jz GUARDADO_HEXA
     
     T_9:
       cmp al, TECLA_9 
-      mov bl, 0x9 
+      mov bl, 0x9        ;Guardo el hexa de cada tecla    
       jz GUARDADO_HEXA  
     
     T_A:
-      cmp al, TECLA_A ; 
-      mov bl, 0xA
+      cmp al, TECLA_A  
+      mov bl, 0xA        ;Guardo el hexa de cada tecla   
       jz GUARDADO_HEXA
     
     T_B:
       cmp al, TECLA_B 
-      mov bl, 0xB 
+      mov bl, 0xB        ;Guardo el hexa de cada tecla    
       jz GUARDADO_HEXA  
     
     T_C:
-      cmp al, TECLA_C ; 
-      mov bl, 0xC
+      cmp al, TECLA_C 
+      mov bl, 0xC        ;Guardo el hexa de cada tecla   
       jz GUARDADO_HEXA 
     
     T_D:
       cmp al, TECLA_D 
-      mov bl, 0xD
+      mov bl, 0xD        ;Guardo el hexa de cada tecla   
       jz GUARDADO_HEXA 
     
     T_E:
       cmp al, TECLA_E 
-      mov bl, 0xE
+      mov bl, 0xE        ;Guardo el hexa de cada tecla   
       jz GUARDADO_HEXA 
 
     T_F:
       cmp al, TECLA_F 
-      mov bl, 0xF
+      mov bl, 0xF        ;Guardo el hexa de cada tecla   
       jz GUARDADO_HEXA 
 
     T_ENTER:
-      cmp al, TECLA_ENTER ; 
+      cmp al, TECLA_ENTER  
       jz FIN
 
 
@@ -344,17 +382,31 @@ WHILE:
     SIGUIENTE:
     
       mov ax, 0x0
-      mov [_flag_int_teclado], ax
-      sti
-      jmp WHILE
+      mov [_flag_int_teclado], ax      ;Reinicio flag de teclado 
+      sti                              ;Habilito interrupciones nuevamente
+      jmp WHILE                        ;Espero nuevas teclas
 
 
     FIN:
-      call CARGAR_TABLA_2
-      mov ax, 0x0
-      mov [_flag_int_teclado], ax
-      sti 
+      
+      cmp byte[_CONTADOR_TECLAS],0x0  ;Me fijo si estoy parado en la primer pocision del vector
+      jz CASO_TECLA_ENTER_SOLA
+      JMP CASO_NORMAL
+
+
+      CASO_TECLA_ENTER_SOLA:
+      cmp byte[_flag_16_TECLAS],0x0    ;Me fijo si la cantidad de teclas fue  realmente 0 o multiplo de 16
+      jz RESET                         ;Si fue 0, es porque solo se presiono la tecla ENTER
+
+      CASO_NORMAL:
       BKP
+      call CARGAR_TABLA_2
+
+      RESET:
+      mov ax, 0x0
+      mov [_flag_int_teclado], ax     ;Reinicio flag de teclado 
+      sti                             ;Habilito interrupciones nuevamente
+
 
 
 jmp WHILE
@@ -370,7 +422,9 @@ _CONTADOR_TECLAS_BYTES: dq 0x0  ;Contador para tomar de a dos hexas, y ponerlos 
 _ENTRADA_TABLA: dq __INICIO_RAM_TABLA_DIGITOS + 0x10 ;Puntero a la primera entrada de tabla libre
 _flag_int_teclado: dq 0x00      ;Flag si interrupio el teclado
 _flag_16_TECLAS: dq 0x00        ;Flag si se presionaron mas de 16 teclas
-_CONTADOR_TIMER: dq 0x00        ;Contador de interrupciones del PIT
+_flag_int_timer: dq 0x00
+_CONTADOR_TIMER: dq 0x00        ;Contador de interrupciones del PIT cada 10ms
+_CONTADOR_TIMER_2: dq 0x00      ;Contador de interrupciones del PIT cada 100ms
 
  
 
