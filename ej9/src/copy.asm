@@ -20,7 +20,7 @@ COPY_CICLO:
     inc edi             ;muevo el puntero de destino 1 pocision
     dec ecx
     jne COPY_CICLO   ;verifica el flag de 0 del ecx
-    xchg bx,bx
+    ;xchg bx,bx
 
     ret
 

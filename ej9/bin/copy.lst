@@ -20,8 +20,8 @@
     20 00000010 47                          inc edi             ;muevo el puntero de destino 1 pocision
     21 00000011 49                          dec ecx
     22 00000012 75F7                        jne COPY_CICLO   ;verifica el flag de 0 del ecx
-    23 00000014 6687DB                      xchg bx,bx
+    23                                      ;xchg bx,bx
     24                                  
-    25 00000017 C3                          ret
+    25 00000014 C3                          ret
     26                                  
     27                                  

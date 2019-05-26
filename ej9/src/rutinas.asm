@@ -9,6 +9,9 @@ EXTERN __INICIO_RAM_TABLA_DIGITOS
 EXTERN _flag_16_TECLAS
 EXTERN _NUMERO_TOTAL
 
+
+
+
 section .rutinas
 USE32
 
@@ -69,7 +72,7 @@ CARGAR_TABLA_2:
 	mov al, 0x00			
 	mov [__INICIO_RAM_TABLA_DIGITOS + ecx], al             
 
-    inc ecx
+  inc ecx
 	cmp ecx, 0x10 		;Chequeo si llegue a la tecla numero 16
 	jz PARIDAD
 	jmp CEROS
@@ -137,21 +140,37 @@ section .tarea_1
 
 SUMA_TABLA_DIGITOS:
 
-    
+    mov eax, 0x00
     mov edx, __INICIO_RAM_TABLA_DIGITOS + 0x10
-    xchg bx, bx
+    mov [_NUMERO_TOTAL], eax
+    mov [_NUMERO_TOTAL + 0x04], eax
+
+    ;xchg bx, bx
 
 
     LP:
-    mov eax,[edx]
-    add [_NUMERO_TOTAL], eax
-
-    add edx , 0x10
     cmp edx, [_ENTRADA_TABLA]
     jz RESULTADO
-    ;mov [_NUMERO_TOTAL], eax
+    mov eax,[edx]
+    add [_NUMERO_TOTAL], eax
+    mov eax,[edx+0x04]
+    jc CARRY
+    jmp LP2   
+
+
+
+    CARRY: 
+    add byte[_NUMERO_TOTAL+0x04], 0x01
+
+
+
+    LP2:
+    add [_NUMERO_TOTAL+0x04], eax
+    add edx , 0x10
+
     jmp LP
 
     RESULTADO:
-    nop
+
+
     ret

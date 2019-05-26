@@ -24,8 +24,7 @@
     24 0000001A 665A                       pop  dx
     25 0000001C E643                       out  PIT_8253_CMD_PORT, al
     26 0000001E 6683C240                   add  dx, PIT_8253_CHANNEL_BASE_DATA_PORT
-    27 00000022 66B8F034                   mov  ax, word 1193200    ;100 [ms] * 1.19318[MHz] = 119320   
-    27          ******************       warning: word data exceeds bounds [-w+number-overflow]
+    27 00000022 66B89C2E                   mov  ax, word 11932    ;10 [ms] * 1.19318[MHz] = 11932  
     28 00000026 EE                         out  dx, al
     29 00000027 88E0                       mov  al, ah
     30 00000029 EE                         out  dx, al

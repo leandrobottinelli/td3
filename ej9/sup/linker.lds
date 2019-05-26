@@ -29,8 +29,8 @@ MEMORY
 
 SECTIONS
 {
-	.init 0xFFFF0000:
-	{*(.init);} AT >rom_init		
+	.init 0xFFFF0000: 			/*VMA*/
+	{*(.init);} AT >rom_init	/*LMA*/	
 
 
 

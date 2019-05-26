@@ -1,981 +1,199 @@
      1                                  
-     2                                  SECTION .init
-     3                                  
-     4                                  GLOBAL _bios_init
+     2                                  GLOBAL MOSTRAR_PANTALLA
+     3                                  EXTERN _NUMERO_TOTAL
+     4                                  EXTERN _BUFFER_NUMERO_PANTALLA
      5                                  
-     6                                  USE16
-     7                                  
+     6                                  section .rutinas
+     7                                  USE32
      8                                  
-     9                                  
-    10                                  %macro      leer_registro_pci 1                 ; 1 parámetro
-    11                                      mov     eax, %1
-    12                                      or      eax, esi
-    13                                      mov     dx, 0x0CF8
-    14                                      out     dx, eax                             ; Escribir palabra de configuración.
-    15                                      mov     dx, 0x0CFC
-    16                                      in      eax, dx                             ; Verificar si existe el dispositivo.
-    17                                  %endmacro
-    18                                  
-    19                                  ;--------------------------------------------------------------------------------
-    20                                  ; Salto a punto de entrada
-    21                                  ;--------------------------------------------------------------------------------
-    22 00000000 E9FC10                      jmp     bios_init   ; Inicio del codigo de inicializacion
-    23                                  
-    24                                  ;--------------------------------------------------------------------------------
-    25                                  ; Tablas de datos para inicializacion
-    26                                  ;--------------------------------------------------------------------------------
-    27                                  seq_regs_data:
-    28 00000003 03                          db      0x03        ; Reset Register
-    29 00000004 00                          db      0x00        ; Clocking Mode Register
-    30 00000005 03                          db      0x03        ; Map Mask Register
-    31 00000006 00                          db      0x00        ; Character Map Select Register
-    32 00000007 02                          db      0x02        ; Sequencer Memory Mode Register
-    33                                  
-    34                                  crtc_regs_data:
-    35 00000008 5F                          db      0x5F        ; Cantidad caracteres menos 5 incluyendo borde.
-    36 00000009 4F                          db      0x4F        ; Cantidad caracteres visualizados menos 1.
-    37 0000000A 50                          db      0x50        ; Carácter en el que comienza el blanqueo.
-    38 0000000B 82                          db      0x82        ; Fin de blanqueo horizontal.
-    39 0000000C 55                          db      0x55        ; Carácter donde comienza el retrazo horizontal.
-    40 0000000D 81                          db      0x81        ; Fin del retrazo horizontal.
-    41 0000000E BF                          db      0xBF        ; Cantidad de scan lines - 2 (0x1BF = 447).
-    42 0000000F 1F                          db      0x1F        ; Bits 9 y 8 de varios registros.
-    43 00000010 00                          db      0x00        ; Primer scan line a ser visualizado.
-    44 00000011 4F                          db      0x4F        ; Bits 4-0: máxima línea de scan.
-    45 00000012 0D                          db      0x0D        ; Scan line donde comienza el cursor.
-    46 00000013 0E                          db      0x0E        ; Scan line donde termina el cursor.
-    47 00000014 00                          db      0x00        ; Bits 15-8 del inicio del buffer de video.
-    48 00000015 00                          db      0x00        ; Bits 7-0 del inicio del buffer de video.
-    49 00000016 05                          db      0x05        ; Bits 15-8 de la posición del cursor en pantalla.
-    50 00000017 50                          db      0x50        ; Bits 7-0 de la posición del cursor en pantalla.
-    51 00000018 9C                          db      0x9C        ; Inicio retrazado vertical (0x19C = 412).
-    52 00000019 8E                          db      0x8E        ; Fin retrazado vertical (bits 3-0) y protección de
-    53                                                          ; escritura para registros cero a 7 (bit 7).
-    54 0000001A 8F                          db      0x8F        ; Fin de refresco vertical (0x18F = 409)
-    55 0000001B 28                          db      0x28        ; Cantidad de bytes por scan line dividido 4.
-    56 0000001C 1F                          db      0x1F        ; Scan line para el subrayado.
-    57 0000001D 96                          db      0x96        ; Inicio blanqueo vertical (0x196 = 406)
-    58 0000001E B9                          db      0xB9        ; Fin blanqueo vertical (0x1B9 = 441)
-    59 0000001F A3                          db      0xA3        ; Registro de control de modo.
-    60 00000020 FF                          db      0xFF        ; Registro de comparación de líneas.
+     9                                  BUFFER_VIDEO equ 0xb8000
+    10                                  COLUMNAS equ 0x500
+    11                                  
+    12                                  
+    13                                  %define ASCII_TECLA_A 0x41
+    14                                  %define ASCII_TECLA_B 0x42
+    15                                  %define ASCII_TECLA_C 0x43
+    16                                  %define ASCII_TECLA_D 0x44
+    17                                  %define ASCII_TECLA_E 0x45
+    18                                  %define ASCII_TECLA_F 0x46
+    19                                  %define ASCII_TECLA_0 0x30
+    20                                  %define ASCII_TECLA_1 0x31
+    21                                  %define ASCII_TECLA_2 0x32
+    22                                  %define ASCII_TECLA_3 0x33
+    23                                  %define ASCII_TECLA_4 0x34
+    24                                  %define ASCII_TECLA_5 0x35
+    25                                  %define ASCII_TECLA_6 0x36
+    26                                  %define ASCII_TECLA_7 0x37
+    27                                  %define ASCII_TECLA_8 0x38
+    28                                  %define ASCII_TECLA_9 0x39
+    29                                  %define ASCII_TECLA_x 0x78
+    30                                  
+    31                                  
+    32                                  
+    33                                      MOSTRAR_PANTALLA:
+    34                                  
+    35 00000000 B900000000                    mov ecx, 0x0 
+    36 00000005 BA00000000                    mov edx, 0x0
+    37 0000000A BB00000000                    mov ebx, 0x0
+    38                                  
+    39                                        PARTE_ALTA:
+    40 0000000F A1[04000000]                  mov eax, [_NUMERO_TOTAL + 0x4]
+    41 00000014 EB09                          jmp BUFFER
+    42                                  
+    43                                        PARTE_BAJA:
+    44 00000016 A1[00000000]                  mov eax, [_NUMERO_TOTAL]
+    45 0000001B 66BA0100                      mov dx, 0x01
+    46                                        ;inc ecx ;me esta agregando espacio
+    47                                  
+    48                                   
+    49                                  
+    50                                  
+    51                                  
+    52                                        BUFFER:
+    53 0000001F C1C004                        rol eax,0x4
+    54 00000022 B30F                          mov bl,0xF
+    55 00000024 21C3                          and ebx,eax
+    56                                  
+    57                                        L_0:
+    58 00000026 80FB00                        cmp bl, 0x0
+    59 00000029 B730                          mov bh, ASCII_TECLA_0 ; 
+    60 0000002B 746A                          jz GUARDADO_LETRA
     61                                  
-    62                                  graphics_regs_data:
-    63 00000021 00                          db      0x00        ; Set/Reset Register
-    64 00000022 00                          db      0x00        ; Enable Set/Reset Register
-    65 00000023 00                          db      0x00        ; Color Compare Register
-    66 00000024 00                          db      0x00        ; Data Rotate Register
-    67 00000025 00                          db      0x00        ; Graphics Mode Register  
-    68 00000026 10                          db      0x10        ; Miscellaneous Graphics Register
-    69 00000027 0E                          db      0x0E        ; Color Don't Care Register
-    70 00000028 00                          db      0x00        ; Bit Mask Register
-    71 00000029 FF                          db      0xFF
-    72                                  
-    73                                  attrcon_regs_data:
-    74 0000002A 00                          db      0x00        ; Paleta para color 0.
-    75 0000002B 01                          db      0x01        ; Paleta para color 1.
-    76 0000002C 02                          db      0x02        ; Paleta para color 2.
-    77 0000002D 03                          db      0x03        ; Paleta para color 3.
-    78 0000002E 04                          db      0x04        ; Paleta para color 4.
-    79 0000002F 05                          db      0x05        ; Paleta para color 5.
-    80 00000030 14                          db      0x14        ; Paleta para color 6.
-    81 00000031 07                          db      0x07        ; Paleta para color 7.
-    82 00000032 38                          db      0x38        ; Paleta para color 8.
-    83 00000033 39                          db      0x39        ; Paleta para color 9.
-    84 00000034 3A                          db      0x3A        ; Paleta para color 10.
-    85 00000035 3B                          db      0x3B        ; Paleta para color 11.
-    86 00000036 3C                          db      0x3C        ; Paleta para color 12.
-    87 00000037 3D                          db      0x3D        ; Paleta para color 13.
-    88 00000038 3E                          db      0x3E        ; Paleta para color 14.
-    89 00000039 3F                          db      0x3F        ; Paleta para color 15.
-    90 0000003A 0C                          db      0x0C        ; Registro de control de atributos.
-    91                                                          ; * Bit 7: Fuente de los bits de video P5 y P4 al DAC de video
-    92                                                          ; * Bit 6: Habilitación de 256 colores.
-    93                                                          ; * Bit 5: Modo de desplazamiento de píxeles
-    94                                                          ; * Bit 4: No usado
-    95                                                          ; * Bit 3: "1" para habilitar blink, "0" para tener 16 colores de fondo.
-    96                                                          ; * Bit 2: Replicación de octava a novena columna para caracteres
-    97                                                          ;         0xC0 - 0xDF (para dibujar bloques en modo texto).
-    98                                                          ; * Bit 1: Sin uso
-    99                                                          ; * Bit 0: Habilitación de gráficos.
-   100 0000003B 00                          db      0x00        ; Color usado para el borde en algunos modos.
-   101 0000003C 0F                          db      0x0F        ; Habilitación de planos de color.
-   102 0000003D 08                          db      0x08        ; Desplazamiento de píxeles de video hacia la izquierda.
-   103 0000003E 00                          db      0x00        ; Registro de selección de color.
-   104                                  
-   105                                  palette_data:
-   106 0000003F 000000                      db      0x00, 0x00, 0x00    ;RGB of color #0
-   107 00000042 00002A                      db      0x00, 0x00, 0x2a
-   108 00000045 002A00                      db      0x00, 0x2a, 0x00
-   109 00000048 002A2A                      db      0x00, 0x2a, 0x2a
-   110 0000004B 2A0000                      db      0x2a, 0x00, 0x00    ;RGB of color #4
-   111 0000004E 2A002A                      db      0x2a, 0x00, 0x2a
-   112 00000051 2A2A00                      db      0x2a, 0x2a, 0x00
-   113 00000054 2A2A2A                      db      0x2a, 0x2a, 0x2a
-   114 00000057 000015                      db      0x00, 0x00, 0x15    ;RGB of color #8
-   115 0000005A 00003F                      db      0x00, 0x00, 0x3f
-   116 0000005D 002A15                      db      0x00, 0x2a, 0x15
-   117 00000060 002A3F                      db      0x00, 0x2a, 0x3f
-   118 00000063 2A0015                      db      0x2a, 0x00, 0x15    ;RGB of color #12
-   119 00000066 2A003F                      db      0x2a, 0x00, 0x3f
-   120 00000069 2A2A15                      db      0x2a, 0x2a, 0x15
-   121 0000006C 2A2A3F                      db      0x2a, 0x2a, 0x3f
-   122 0000006F 001500                      db      0x00, 0x15, 0x00    ;RGB of color #16
-   123 00000072 00152A                      db      0x00, 0x15, 0x2a
-   124 00000075 003F00                      db      0x00, 0x3f, 0x00
-   125 00000078 003F2A                      db      0x00, 0x3f, 0x2a
-   126 0000007B 2A1500                      db      0x2a, 0x15, 0x00    ;RGB of color #20
-   127 0000007E 2A152A                      db      0x2a, 0x15, 0x2a
-   128 00000081 2A3F00                      db      0x2a, 0x3f, 0x00
-   129 00000084 2A3F2A                      db      0x2a, 0x3f, 0x2a
-   130 00000087 001515                      db      0x00, 0x15, 0x15    ;RGB of color #24
-   131 0000008A 00153F                      db      0x00, 0x15, 0x3f
-   132 0000008D 003F15                      db      0x00, 0x3f, 0x15
-   133 00000090 003F3F                      db      0x00, 0x3f, 0x3f
-   134 00000093 2A1515                      db      0x2a, 0x15, 0x15    ;RGB of color #28
-   135 00000096 2A153F                      db      0x2a, 0x15, 0x3f
-   136 00000099 2A3F15                      db      0x2a, 0x3f, 0x15
-   137 0000009C 2A3F3F                      db      0x2a, 0x3f, 0x3f
-   138 0000009F 150000                      db      0x15, 0x00, 0x00    ;RGB of color #32
-   139 000000A2 15002A                      db      0x15, 0x00, 0x2a
-   140 000000A5 152A00                      db      0x15, 0x2a, 0x00
-   141 000000A8 152A2A                      db      0x15, 0x2a, 0x2a
-   142 000000AB 3F0000                      db      0x3f, 0x00, 0x00    ;RGB of color #36
-   143 000000AE 3F002A                      db      0x3f, 0x00, 0x2a
-   144 000000B1 3F2A00                      db      0x3f, 0x2a, 0x00
-   145 000000B4 3F2A2A                      db      0x3f, 0x2a, 0x2a
-   146 000000B7 150015                      db      0x15, 0x00, 0x15    ;RGB of color #40
-   147 000000BA 15003F                      db      0x15, 0x00, 0x3f
-   148 000000BD 152A15                      db      0x15, 0x2a, 0x15
-   149 000000C0 152A3F                      db      0x15, 0x2a, 0x3f
-   150 000000C3 3F0015                      db      0x3f, 0x00, 0x15    ;RGB of color #44
-   151 000000C6 3F003F                      db      0x3f, 0x00, 0x3f
-   152 000000C9 3F2A15                      db      0x3f, 0x2a, 0x15
-   153 000000CC 3F2A3F                      db      0x3f, 0x2a, 0x3f
-   154 000000CF 151500                      db      0x15, 0x15, 0x00    ;RGB of color #48
-   155 000000D2 15152A                      db      0x15, 0x15, 0x2a
-   156 000000D5 153F00                      db      0x15, 0x3f, 0x00
-   157 000000D8 153F2A                      db      0x15, 0x3f, 0x2a
-   158 000000DB 3F1500                      db      0x3f, 0x15, 0x00    ;RGB of color #52
-   159 000000DE 3F152A                      db      0x3f, 0x15, 0x2a
-   160 000000E1 3F3F00                      db      0x3f, 0x3f, 0x00
-   161 000000E4 3F3F2A                      db      0x3f, 0x3f, 0x2a
-   162 000000E7 151515                      db      0x15, 0x15, 0x15    ;RGB of color #56
-   163 000000EA 15153F                      db      0x15, 0x15, 0x3f
-   164 000000ED 153F15                      db      0x15, 0x3f, 0x15
-   165 000000F0 153F3F                      db      0x15, 0x3f, 0x3f
-   166 000000F3 3F1515                      db      0x3f, 0x15, 0x15    ;RGB of color #60
-   167 000000F6 3F153F                      db      0x3f, 0x15, 0x3f
-   168 000000F9 3F3F15                      db      0x3f, 0x3f, 0x15
-   169 000000FC 3F3F3F                      db      0x3f, 0x3f, 0x3f
-   170                                  
-   171                                  ;--------------------------------------------------------------------------------
-   172                                  ; Fonts de dominio público de Joseph Gil
-   173                                  ;--------------------------------------------------------------------------------
-   174                                  font16x8:
-   175 000000FF 000000000000000000-         db 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
-   175 00000108 00000000000000     
-   176 0000010F 00007E81A58181BD99-         db 0x00, 0x00, 0x7e, 0x81, 0xa5, 0x81, 0x81, 0xbd, 0x99, 0x81, 0x81, 0x7e, 0x00, 0x00, 0x00, 0x00
-   176 00000118 81817E00000000     
-   177 0000011F 00007EFFDBFFFFC3E7-         db 0x00, 0x00, 0x7e, 0xff, 0xdb, 0xff, 0xff, 0xc3, 0xe7, 0xff, 0xff, 0x7e, 0x00, 0x00, 0x00, 0x00
-   177 00000128 FFFF7E00000000     
-   178 0000012F 000000006CFEFEFEFE-         db 0x00, 0x00, 0x00, 0x00, 0x6c, 0xfe, 0xfe, 0xfe, 0xfe, 0x7c, 0x38, 0x10, 0x00, 0x00, 0x00, 0x00
-   178 00000138 7C381000000000     
-   179 0000013F 0000000010387CFE7C-         db 0x00, 0x00, 0x00, 0x00, 0x10, 0x38, 0x7c, 0xfe, 0x7c, 0x38, 0x10, 0x00, 0x00, 0x00, 0x00, 0x00
-   179 00000148 38100000000000     
-   180 0000014F 000000183C3CE7E7E7-         db 0x00, 0x00, 0x00, 0x18, 0x3c, 0x3c, 0xe7, 0xe7, 0xe7, 0x18, 0x18, 0x3c, 0x00, 0x00, 0x00, 0x00
-   180 00000158 18183C00000000     
-   181 0000015F 000000183C7EFFFF7E-         db 0x00, 0x00, 0x00, 0x18, 0x3c, 0x7e, 0xff, 0xff, 0x7e, 0x18, 0x18, 0x3c, 0x00, 0x00, 0x00, 0x00
-   181 00000168 18183C00000000     
-   182 0000016F 000000000000183C3C-         db 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x18, 0x3c, 0x3c, 0x18, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
-   182 00000178 18000000000000     
-   183 0000017F FFFFFFFFFFFFE7C3C3-         db 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xe7, 0xc3, 0xc3, 0xe7, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff
-   183 00000188 E7FFFFFFFFFFFF     
-   184 0000018F 00000000003C664242-         db 0x00, 0x00, 0x00, 0x00, 0x00, 0x3c, 0x66, 0x42, 0x42, 0x66, 0x3c, 0x00, 0x00, 0x00, 0x00, 0x00
-   184 00000198 663C0000000000     
-   185 0000019F FFFFFFFFFFC399BDBD-         db 0xff, 0xff, 0xff, 0xff, 0xff, 0xc3, 0x99, 0xbd, 0xbd, 0x99, 0xc3, 0xff, 0xff, 0xff, 0xff, 0xff
-   185 000001A8 99C3FFFFFFFFFF     
-   186 000001AF 00001E0E1A3278CCCC-         db 0x00, 0x00, 0x1e, 0x0e, 0x1a, 0x32, 0x78, 0xcc, 0xcc, 0xcc, 0xcc, 0x78, 0x00, 0x00, 0x00, 0x00
-   186 000001B8 CCCC7800000000     
-   187 000001BF 00003C666666663C18-         db 0x00, 0x00, 0x3c, 0x66, 0x66, 0x66, 0x66, 0x3c, 0x18, 0x7e, 0x18, 0x18, 0x00, 0x00, 0x00, 0x00
-   187 000001C8 7E181800000000     
-   188 000001CF 00003F333F30303030-         db 0x00, 0x00, 0x3f, 0x33, 0x3f, 0x30, 0x30, 0x30, 0x30, 0x70, 0xf0, 0xe0, 0x00, 0x00, 0x00, 0x00
-   188 000001D8 70F0E000000000     
-   189 000001DF 00007F637F63636363-         db 0x00, 0x00, 0x7f, 0x63, 0x7f, 0x63, 0x63, 0x63, 0x63, 0x67, 0xe7, 0xe6, 0xc0, 0x00, 0x00, 0x00
-   189 000001E8 67E7E6C0000000     
-   190 000001EF 0000001818DB3CE73C-         db 0x00, 0x00, 0x00, 0x18, 0x18, 0xdb, 0x3c, 0xe7, 0x3c, 0xdb, 0x18, 0x18, 0x00, 0x00, 0x00, 0x00
-   190 000001F8 DB181800000000     
-   191 000001FF 0080C0E0F0F8FEF8F0-         db 0x00, 0x80, 0xc0, 0xe0, 0xf0, 0xf8, 0xfe, 0xf8, 0xf0, 0xe0, 0xc0, 0x80, 0x00, 0x00, 0x00, 0x00
-   191 00000208 E0C08000000000     
-   192 0000020F 0002060E1E3EFE3E1E-         db 0x00, 0x02, 0x06, 0x0e, 0x1e, 0x3e, 0xfe, 0x3e, 0x1e, 0x0e, 0x06, 0x02, 0x00, 0x00, 0x00, 0x00
-   192 00000218 0E060200000000     
-   193 0000021F 0000183C7E1818187E-         db 0x00, 0x00, 0x18, 0x3c, 0x7e, 0x18, 0x18, 0x18, 0x7e, 0x3c, 0x18, 0x00, 0x00, 0x00, 0x00, 0x00
-   193 00000228 3C180000000000     
-   194 0000022F 000066666666666666-         db 0x00, 0x00, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x00, 0x66, 0x66, 0x00, 0x00, 0x00, 0x00
-   194 00000238 00666600000000     
-   195 0000023F 00007FDBDBDB7B1B1B-         db 0x00, 0x00, 0x7f, 0xdb, 0xdb, 0xdb, 0x7b, 0x1b, 0x1b, 0x1b, 0x1b, 0x1b, 0x00, 0x00, 0x00, 0x00
-   195 00000248 1B1B1B00000000     
-   196 0000024F 007CC660386CC6C66C-         db 0x00, 0x7c, 0xc6, 0x60, 0x38, 0x6c, 0xc6, 0xc6, 0x6c, 0x38, 0x0c, 0xc6, 0x7c, 0x00, 0x00, 0x00
-   196 00000258 380CC67C000000     
-   197 0000025F 0000000000000000FE-         db 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xfe, 0xfe, 0xfe, 0xfe, 0x00, 0x00, 0x00, 0x00
-   197 00000268 FEFEFE00000000     
-   198 0000026F 0000183C7E1818187E-         db 0x00, 0x00, 0x18, 0x3c, 0x7e, 0x18, 0x18, 0x18, 0x7e, 0x3c, 0x18, 0x7e, 0x00, 0x00, 0x00, 0x00
-   198 00000278 3C187E00000000     
-   199 0000027F 0000183C7E18181818-         db 0x00, 0x00, 0x18, 0x3c, 0x7e, 0x18, 0x18, 0x18, 0x18, 0x18, 0x18, 0x18, 0x00, 0x00, 0x00, 0x00
-   199 00000288 18181800000000     
-   200 0000028F 000018181818181818-         db 0x00, 0x00, 0x18, 0x18, 0x18, 0x18, 0x18, 0x18, 0x18, 0x7e, 0x3c, 0x18, 0x00, 0x00, 0x00, 0x00
-   200 00000298 7E3C1800000000     
-   201 0000029F 0000000000180CFE0C-         db 0x00, 0x00, 0x00, 0x00, 0x00, 0x18, 0x0c, 0xfe, 0x0c, 0x18, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
-   201 000002A8 18000000000000     
-   202 000002AF 00000000003060FE60-         db 0x00, 0x00, 0x00, 0x00, 0x00, 0x30, 0x60, 0xfe, 0x60, 0x30, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
-   202 000002B8 30000000000000     
-   203 000002BF 000000000000C0C0C0-         db 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xc0, 0xc0, 0xc0, 0xfe, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
-   203 000002C8 FE000000000000     
-   204 000002CF 00000000002466FF66-         db 0x00, 0x00, 0x00, 0x00, 0x00, 0x24, 0x66, 0xff, 0x66, 0x24, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
-   204 000002D8 24000000000000     
-   205 000002DF 000000001038387C7C-         db 0x00, 0x00, 0x00, 0x00, 0x10, 0x38, 0x38, 0x7c, 0x7c, 0xfe, 0xfe, 0x00, 0x00, 0x00, 0x00, 0x00
-   205 000002E8 FEFE0000000000     
-   206 000002EF 00000000FEFE7C7C38-         db 0x00, 0x00, 0x00, 0x00, 0xfe, 0xfe, 0x7c, 0x7c, 0x38, 0x38, 0x10, 0x00, 0x00, 0x00, 0x00, 0x00
-   206 000002F8 38100000000000     
-   207 000002FF 000000000000000000-         db 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
-   207 00000308 00000000000000     
-   208 0000030F 0000183C3C3C181818-         db 0x00, 0x00, 0x18, 0x3c, 0x3c, 0x3c, 0x18, 0x18, 0x18, 0x00, 0x18, 0x18, 0x00, 0x00, 0x00, 0x00
-   208 00000318 00181800000000     
-   209 0000031F 006666662400000000-         db 0x00, 0x66, 0x66, 0x66, 0x24, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
-   209 00000328 00000000000000     
-   210 0000032F 0000006C6CFE6C6C6C-         db 0x00, 0x00, 0x00, 0x6c, 0x6c, 0xfe, 0x6c, 0x6c, 0x6c, 0xfe, 0x6c, 0x6c, 0x00, 0x00, 0x00, 0x00
-   210 00000338 FE6C6C00000000     
-   211 0000033F 18187CC6C2C07C0606-         db 0x18, 0x18, 0x7c, 0xc6, 0xc2, 0xc0, 0x7c, 0x06, 0x06, 0x86, 0xc6, 0x7c, 0x18, 0x18, 0x00, 0x00
-   211 00000348 86C67C18180000     
-   212 0000034F 00000000C2C60C1830-         db 0x00, 0x00, 0x00, 0x00, 0xc2, 0xc6, 0x0c, 0x18, 0x30, 0x60, 0xc6, 0x86, 0x00, 0x00, 0x00, 0x00
-   212 00000358 60C68600000000     
-   213 0000035F 0000386C6C3876DCCC-         db 0x00, 0x00, 0x38, 0x6c, 0x6c, 0x38, 0x76, 0xdc, 0xcc, 0xcc, 0xcc, 0x76, 0x00, 0x00, 0x00, 0x00
-   213 00000368 CCCC7600000000     
-   214 0000036F 003030306000000000-         db 0x00, 0x30, 0x30, 0x30, 0x60, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
-   214 00000378 00000000000000     
-   215 0000037F 00000C183030303030-         db 0x00, 0x00, 0x0c, 0x18, 0x30, 0x30, 0x30, 0x30, 0x30, 0x30, 0x18, 0x0c, 0x00, 0x00, 0x00, 0x00
-   215 00000388 30180C00000000     
-   216 0000038F 000030180C0C0C0C0C-         db 0x00, 0x00, 0x30, 0x18, 0x0c, 0x0c, 0x0c, 0x0c, 0x0c, 0x0c, 0x18, 0x30, 0x00, 0x00, 0x00, 0x00
-   216 00000398 0C183000000000     
-   217 0000039F 0000000000663CFF3C-         db 0x00, 0x00, 0x00, 0x00, 0x00, 0x66, 0x3c, 0xff, 0x3c, 0x66, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
-   217 000003A8 66000000000000     
-   218 000003AF 000000000018187E18-         db 0x00, 0x00, 0x00, 0x00, 0x00, 0x18, 0x18, 0x7e, 0x18, 0x18, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
-   218 000003B8 18000000000000     
-   219 000003BF 000000000000000000-         db 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x18, 0x18, 0x18, 0x30, 0x00, 0x00, 0x00
-   219 000003C8 18181830000000     
-   220 000003CF 00000000000000FE00-         db 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xfe, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
-   220 000003D8 00000000000000     
-   221 000003DF 000000000000000000-         db 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x18, 0x18, 0x00, 0x00, 0x00, 0x00
-   221 000003E8 00181800000000     
-   222 000003EF 0000000002060C1830-         db 0x00, 0x00, 0x00, 0x00, 0x02, 0x06, 0x0c, 0x18, 0x30, 0x60, 0xc0, 0x80, 0x00, 0x00, 0x00, 0x00
-   222 000003F8 60C08000000000     
-   223 000003FF 00003C66C3C3DBDBC3-         db 0x00, 0x00, 0x3c, 0x66, 0xc3, 0xc3, 0xdb, 0xdb, 0xc3, 0xc3, 0x66, 0x3c, 0x00, 0x00, 0x00, 0x00
-   223 00000408 C3663C00000000     
-   224 0000040F 000018387818181818-         db 0x00, 0x00, 0x18, 0x38, 0x78, 0x18, 0x18, 0x18, 0x18, 0x18, 0x18, 0x7e, 0x00, 0x00, 0x00, 0x00
-   224 00000418 18187E00000000     
-   225 0000041F 00007CC6060C183060-         db 0x00, 0x00, 0x7c, 0xc6, 0x06, 0x0c, 0x18, 0x30, 0x60, 0xc0, 0xc6, 0xfe, 0x00, 0x00, 0x00, 0x00
-   225 00000428 C0C6FE00000000     
-   226 0000042F 00007CC606063C0606-         db 0x00, 0x00, 0x7c, 0xc6, 0x06, 0x06, 0x3c, 0x06, 0x06, 0x06, 0xc6, 0x7c, 0x00, 0x00, 0x00, 0x00
-   226 00000438 06C67C00000000     
-   227 0000043F 00000C1C3C6CCCFE0C-         db 0x00, 0x00, 0x0c, 0x1c, 0x3c, 0x6c, 0xcc, 0xfe, 0x0c, 0x0c, 0x0c, 0x1e, 0x00, 0x00, 0x00, 0x00
-   227 00000448 0C0C1E00000000     
-   228 0000044F 0000FEC0C0C0FC0606-         db 0x00, 0x00, 0xfe, 0xc0, 0xc0, 0xc0, 0xfc, 0x06, 0x06, 0x06, 0xc6, 0x7c, 0x00, 0x00, 0x00, 0x00
-   228 00000458 06C67C00000000     
-   229 0000045F 00003860C0C0FCC6C6-         db 0x00, 0x00, 0x38, 0x60, 0xc0, 0xc0, 0xfc, 0xc6, 0xc6, 0xc6, 0xc6, 0x7c, 0x00, 0x00, 0x00, 0x00
-   229 00000468 C6C67C00000000     
-   230 0000046F 0000FEC606060C1830-         db 0x00, 0x00, 0xfe, 0xc6, 0x06, 0x06, 0x0c, 0x18, 0x30, 0x30, 0x30, 0x30, 0x00, 0x00, 0x00, 0x00
-   230 00000478 30303000000000     
-   231 0000047F 00007CC6C6C67CC6C6-         db 0x00, 0x00, 0x7c, 0xc6, 0xc6, 0xc6, 0x7c, 0xc6, 0xc6, 0xc6, 0xc6, 0x7c, 0x00, 0x00, 0x00, 0x00
-   231 00000488 C6C67C00000000     
-   232 0000048F 00007CC6C6C67E0606-         db 0x00, 0x00, 0x7c, 0xc6, 0xc6, 0xc6, 0x7e, 0x06, 0x06, 0x06, 0x0c, 0x78, 0x00, 0x00, 0x00, 0x00
-   232 00000498 060C7800000000     
-   233 0000049F 000000001818000000-         db 0x00, 0x00, 0x00, 0x00, 0x18, 0x18, 0x00, 0x00, 0x00, 0x18, 0x18, 0x00, 0x00, 0x00, 0x00, 0x00
-   233 000004A8 18180000000000     
-   234 000004AF 000000001818000000-         db 0x00, 0x00, 0x00, 0x00, 0x18, 0x18, 0x00, 0x00, 0x00, 0x18, 0x18, 0x30, 0x00, 0x00, 0x00, 0x00
-   234 000004B8 18183000000000     
-   235 000004BF 000000060C18306030-         db 0x00, 0x00, 0x00, 0x06, 0x0c, 0x18, 0x30, 0x60, 0x30, 0x18, 0x0c, 0x06, 0x00, 0x00, 0x00, 0x00
-   235 000004C8 180C0600000000     
-   236 000004CF 00000000007E00007E-         db 0x00, 0x00, 0x00, 0x00, 0x00, 0x7e, 0x00, 0x00, 0x7e, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
-   236 000004D8 00000000000000     
-   237 000004DF 0000006030180C060C-         db 0x00, 0x00, 0x00, 0x60, 0x30, 0x18, 0x0c, 0x06, 0x0c, 0x18, 0x30, 0x60, 0x00, 0x00, 0x00, 0x00
-   237 000004E8 18306000000000     
-   238 000004EF 00007CC6C60C181818-         db 0x00, 0x00, 0x7c, 0xc6, 0xc6, 0x0c, 0x18, 0x18, 0x18, 0x00, 0x18, 0x18, 0x00, 0x00, 0x00, 0x00
-   238 000004F8 00181800000000     
-   239 000004FF 0000007CC6C6DEDEDE-         db 0x00, 0x00, 0x00, 0x7c, 0xc6, 0xc6, 0xde, 0xde, 0xde, 0xdc, 0xc0, 0x7c, 0x00, 0x00, 0x00, 0x00
-   239 00000508 DCC07C00000000     
-   240 0000050F 000010386CC6C6FEC6-         db 0x00, 0x00, 0x10, 0x38, 0x6c, 0xc6, 0xc6, 0xfe, 0xc6, 0xc6, 0xc6, 0xc6, 0x00, 0x00, 0x00, 0x00
-   240 00000518 C6C6C600000000     
-   241 0000051F 0000FC6666667C6666-         db 0x00, 0x00, 0xfc, 0x66, 0x66, 0x66, 0x7c, 0x66, 0x66, 0x66, 0x66, 0xfc, 0x00, 0x00, 0x00, 0x00
-   241 00000528 6666FC00000000     
-   242 0000052F 00003C66C2C0C0C0C0-         db 0x00, 0x00, 0x3c, 0x66, 0xc2, 0xc0, 0xc0, 0xc0, 0xc0, 0xc2, 0x66, 0x3c, 0x00, 0x00, 0x00, 0x00
-   242 00000538 C2663C00000000     
-   243 0000053F 0000F86C6666666666-         db 0x00, 0x00, 0xf8, 0x6c, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x6c, 0xf8, 0x00, 0x00, 0x00, 0x00
-   243 00000548 666CF800000000     
-   244 0000054F 0000FE666268786860-         db 0x00, 0x00, 0xfe, 0x66, 0x62, 0x68, 0x78, 0x68, 0x60, 0x62, 0x66, 0xfe, 0x00, 0x00, 0x00, 0x00
-   244 00000558 6266FE00000000     
-   245 0000055F 0000FE666268786860-         db 0x00, 0x00, 0xfe, 0x66, 0x62, 0x68, 0x78, 0x68, 0x60, 0x60, 0x60, 0xf0, 0x00, 0x00, 0x00, 0x00
-   245 00000568 6060F000000000     
-   246 0000056F 00003C66C2C0C0DEC6-         db 0x00, 0x00, 0x3c, 0x66, 0xc2, 0xc0, 0xc0, 0xde, 0xc6, 0xc6, 0x66, 0x3a, 0x00, 0x00, 0x00, 0x00
-   246 00000578 C6663A00000000     
-   247 0000057F 0000C6C6C6C6FEC6C6-         db 0x00, 0x00, 0xc6, 0xc6, 0xc6, 0xc6, 0xfe, 0xc6, 0xc6, 0xc6, 0xc6, 0xc6, 0x00, 0x00, 0x00, 0x00
-   247 00000588 C6C6C600000000     
-   248 0000058F 00003C181818181818-         db 0x00, 0x00, 0x3c, 0x18, 0x18, 0x18, 0x18, 0x18, 0x18, 0x18, 0x18, 0x3c, 0x00, 0x00, 0x00, 0x00
-   248 00000598 18183C00000000     
-   249 0000059F 00001E0C0C0C0C0CCC-         db 0x00, 0x00, 0x1e, 0x0c, 0x0c, 0x0c, 0x0c, 0x0c, 0xcc, 0xcc, 0xcc, 0x78, 0x00, 0x00, 0x00, 0x00
-   249 000005A8 CCCC7800000000     
-   250 000005AF 0000E666666C78786C-         db 0x00, 0x00, 0xe6, 0x66, 0x66, 0x6c, 0x78, 0x78, 0x6c, 0x66, 0x66, 0xe6, 0x00, 0x00, 0x00, 0x00
-   250 000005B8 6666E600000000     
-   251 000005BF 0000F0606060606060-         db 0x00, 0x00, 0xf0, 0x60, 0x60, 0x60, 0x60, 0x60, 0x60, 0x62, 0x66, 0xfe, 0x00, 0x00, 0x00, 0x00
-   251 000005C8 6266FE00000000     
-   252 000005CF 0000C3E7FFFFDBC3C3-         db 0x00, 0x00, 0xc3, 0xe7, 0xff, 0xff, 0xdb, 0xc3, 0xc3, 0xc3, 0xc3, 0xc3, 0x00, 0x00, 0x00, 0x00
-   252 000005D8 C3C3C300000000     
-   253 000005DF 0000C6E6F6FEDECEC6-         db 0x00, 0x00, 0xc6, 0xe6, 0xf6, 0xfe, 0xde, 0xce, 0xc6, 0xc6, 0xc6, 0xc6, 0x00, 0x00, 0x00, 0x00
-   253 000005E8 C6C6C600000000     
-   254 000005EF 00007CC6C6C6C6C6C6-         db 0x00, 0x00, 0x7c, 0xc6, 0xc6, 0xc6, 0xc6, 0xc6, 0xc6, 0xc6, 0xc6, 0x7c, 0x00, 0x00, 0x00, 0x00
-   254 000005F8 C6C67C00000000     
-   255 000005FF 0000FC6666667C6060-         db 0x00, 0x00, 0xfc, 0x66, 0x66, 0x66, 0x7c, 0x60, 0x60, 0x60, 0x60, 0xf0, 0x00, 0x00, 0x00, 0x00
-   255 00000608 6060F000000000     
-   256 0000060F 00007CC6C6C6C6C6C6-         db 0x00, 0x00, 0x7c, 0xc6, 0xc6, 0xc6, 0xc6, 0xc6, 0xc6, 0xd6, 0xde, 0x7c, 0x0c, 0x0e, 0x00, 0x00
-   256 00000618 D6DE7C0C0E0000     
-   257 0000061F 0000FC6666667C6C66-         db 0x00, 0x00, 0xfc, 0x66, 0x66, 0x66, 0x7c, 0x6c, 0x66, 0x66, 0x66, 0xe6, 0x00, 0x00, 0x00, 0x00
-   257 00000628 6666E600000000     
-   258 0000062F 00007CC6C660380C06-         db 0x00, 0x00, 0x7c, 0xc6, 0xc6, 0x60, 0x38, 0x0c, 0x06, 0xc6, 0xc6, 0x7c, 0x00, 0x00, 0x00, 0x00
-   258 00000638 C6C67C00000000     
-   259 0000063F 0000FFDB9918181818-         db 0x00, 0x00, 0xff, 0xdb, 0x99, 0x18, 0x18, 0x18, 0x18, 0x18, 0x18, 0x3c, 0x00, 0x00, 0x00, 0x00
-   259 00000648 18183C00000000     
-   260 0000064F 0000C6C6C6C6C6C6C6-         db 0x00, 0x00, 0xc6, 0xc6, 0xc6, 0xc6, 0xc6, 0xc6, 0xc6, 0xc6, 0xc6, 0x7c, 0x00, 0x00, 0x00, 0x00
-   260 00000658 C6C67C00000000     
-   261 0000065F 0000C3C3C3C3C3C3C3-         db 0x00, 0x00, 0xc3, 0xc3, 0xc3, 0xc3, 0xc3, 0xc3, 0xc3, 0x66, 0x3c, 0x18, 0x00, 0x00, 0x00, 0x00
-   261 00000668 663C1800000000     
-   262 0000066F 0000C3C3C3C3C3DBDB-         db 0x00, 0x00, 0xc3, 0xc3, 0xc3, 0xc3, 0xc3, 0xdb, 0xdb, 0xff, 0x66, 0x66, 0x00, 0x00, 0x00, 0x00
-   262 00000678 FF666600000000     
-   263 0000067F 0000C3C3663C18183C-         db 0x00, 0x00, 0xc3, 0xc3, 0x66, 0x3c, 0x18, 0x18, 0x3c, 0x66, 0xc3, 0xc3, 0x00, 0x00, 0x00, 0x00
-   263 00000688 66C3C300000000     
-   264 0000068F 0000C3C3C3663C1818-         db 0x00, 0x00, 0xc3, 0xc3, 0xc3, 0x66, 0x3c, 0x18, 0x18, 0x18, 0x18, 0x3c, 0x00, 0x00, 0x00, 0x00
-   264 00000698 18183C00000000     
-   265 0000069F 0000FFC3860C183060-         db 0x00, 0x00, 0xff, 0xc3, 0x86, 0x0c, 0x18, 0x30, 0x60, 0xc1, 0xc3, 0xff, 0x00, 0x00, 0x00, 0x00
-   265 000006A8 C1C3FF00000000     
-   266 000006AF 00003C303030303030-         db 0x00, 0x00, 0x3c, 0x30, 0x30, 0x30, 0x30, 0x30, 0x30, 0x30, 0x30, 0x3c, 0x00, 0x00, 0x00, 0x00
-   266 000006B8 30303C00000000     
-   267 000006BF 00000080C0E070381C-         db 0x00, 0x00, 0x00, 0x80, 0xc0, 0xe0, 0x70, 0x38, 0x1c, 0x0e, 0x06, 0x02, 0x00, 0x00, 0x00, 0x00
-   267 000006C8 0E060200000000     
-   268 000006CF 00003C0C0C0C0C0C0C-         db 0x00, 0x00, 0x3c, 0x0c, 0x0c, 0x0c, 0x0c, 0x0c, 0x0c, 0x0c, 0x0c, 0x3c, 0x00, 0x00, 0x00, 0x00
-   268 000006D8 0C0C3C00000000     
-   269 000006DF 10386CC60000000000-         db 0x10, 0x38, 0x6c, 0xc6, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
-   269 000006E8 00000000000000     
-   270 000006EF 000000000000000000-         db 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xff, 0x00, 0x00
-   270 000006F8 00000000FF0000     
-   271 000006FF 303018000000000000-         db 0x30, 0x30, 0x18, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
-   271 00000708 00000000000000     
-   272 0000070F 0000000000780C7CCC-         db 0x00, 0x00, 0x00, 0x00, 0x00, 0x78, 0x0c, 0x7c, 0xcc, 0xcc, 0xcc, 0x76, 0x00, 0x00, 0x00, 0x00
-   272 00000718 CCCC7600000000     
-   273 0000071F 0000E06060786C6666-         db 0x00, 0x00, 0xe0, 0x60, 0x60, 0x78, 0x6c, 0x66, 0x66, 0x66, 0x66, 0x7c, 0x00, 0x00, 0x00, 0x00
-   273 00000728 66667C00000000     
-   274 0000072F 00000000007CC6C0C0-         db 0x00, 0x00, 0x00, 0x00, 0x00, 0x7c, 0xc6, 0xc0, 0xc0, 0xc0, 0xc6, 0x7c, 0x00, 0x00, 0x00, 0x00
-   274 00000738 C0C67C00000000     
-   275 0000073F 00001C0C0C3C6CCCCC-         db 0x00, 0x00, 0x1c, 0x0c, 0x0c, 0x3c, 0x6c, 0xcc, 0xcc, 0xcc, 0xcc, 0x76, 0x00, 0x00, 0x00, 0x00
-   275 00000748 CCCC7600000000     
-   276 0000074F 00000000007CC6FEC0-         db 0x00, 0x00, 0x00, 0x00, 0x00, 0x7c, 0xc6, 0xfe, 0xc0, 0xc0, 0xc6, 0x7c, 0x00, 0x00, 0x00, 0x00
-   276 00000758 C0C67C00000000     
-   277 0000075F 0000386C6460F06060-         db 0x00, 0x00, 0x38, 0x6c, 0x64, 0x60, 0xf0, 0x60, 0x60, 0x60, 0x60, 0xf0, 0x00, 0x00, 0x00, 0x00
-   277 00000768 6060F000000000     
-   278 0000076F 000000000076CCCCCC-         db 0x00, 0x00, 0x00, 0x00, 0x00, 0x76, 0xcc, 0xcc, 0xcc, 0xcc, 0xcc, 0x7c, 0x0c, 0xcc, 0x78, 0x00
-   278 00000778 CCCC7C0CCC7800     
-   279 0000077F 0000E060606C766666-         db 0x00, 0x00, 0xe0, 0x60, 0x60, 0x6c, 0x76, 0x66, 0x66, 0x66, 0x66, 0xe6, 0x00, 0x00, 0x00, 0x00
-   279 00000788 6666E600000000     
-   280 0000078F 000018180038181818-         db 0x00, 0x00, 0x18, 0x18, 0x00, 0x38, 0x18, 0x18, 0x18, 0x18, 0x18, 0x3c, 0x00, 0x00, 0x00, 0x00
-   280 00000798 18183C00000000     
-   281 0000079F 00000606000E060606-         db 0x00, 0x00, 0x06, 0x06, 0x00, 0x0e, 0x06, 0x06, 0x06, 0x06, 0x06, 0x06, 0x66, 0x66, 0x3c, 0x00
-   281 000007A8 06060666663C00     
-   282 000007AF 0000E06060666C7878-         db 0x00, 0x00, 0xe0, 0x60, 0x60, 0x66, 0x6c, 0x78, 0x78, 0x6c, 0x66, 0xe6, 0x00, 0x00, 0x00, 0x00
-   282 000007B8 6C66E600000000     
-   283 000007BF 000038181818181818-         db 0x00, 0x00, 0x38, 0x18, 0x18, 0x18, 0x18, 0x18, 0x18, 0x18, 0x18, 0x3c, 0x00, 0x00, 0x00, 0x00
-   283 000007C8 18183C00000000     
-   284 000007CF 0000000000E6FFDBDB-         db 0x00, 0x00, 0x00, 0x00, 0x00, 0xe6, 0xff, 0xdb, 0xdb, 0xdb, 0xdb, 0xdb, 0x00, 0x00, 0x00, 0x00
-   284 000007D8 DBDBDB00000000     
-   285 000007DF 0000000000DC666666-         db 0x00, 0x00, 0x00, 0x00, 0x00, 0xdc, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x00, 0x00, 0x00, 0x00
-   285 000007E8 66666600000000     
-   286 000007EF 00000000007CC6C6C6-         db 0x00, 0x00, 0x00, 0x00, 0x00, 0x7c, 0xc6, 0xc6, 0xc6, 0xc6, 0xc6, 0x7c, 0x00, 0x00, 0x00, 0x00
-   286 000007F8 C6C67C00000000     
-   287 000007FF 0000000000DC666666-         db 0x00, 0x00, 0x00, 0x00, 0x00, 0xdc, 0x66, 0x66, 0x66, 0x66, 0x66, 0x7c, 0x60, 0x60, 0xf0, 0x00
-   287 00000808 66667C6060F000     
-   288 0000080F 000000000076CCCCCC-         db 0x00, 0x00, 0x00, 0x00, 0x00, 0x76, 0xcc, 0xcc, 0xcc, 0xcc, 0xcc, 0x7c, 0x0c, 0x0c, 0x1e, 0x00
-   288 00000818 CCCC7C0C0C1E00     
-   289 0000081F 0000000000DC766660-         db 0x00, 0x00, 0x00, 0x00, 0x00, 0xdc, 0x76, 0x66, 0x60, 0x60, 0x60, 0xf0, 0x00, 0x00, 0x00, 0x00
-   289 00000828 6060F000000000     
-   290 0000082F 00000000007CC66038-         db 0x00, 0x00, 0x00, 0x00, 0x00, 0x7c, 0xc6, 0x60, 0x38, 0x0c, 0xc6, 0x7c, 0x00, 0x00, 0x00, 0x00
-   290 00000838 0CC67C00000000     
-   291 0000083F 0000103030FC303030-         db 0x00, 0x00, 0x10, 0x30, 0x30, 0xfc, 0x30, 0x30, 0x30, 0x30, 0x36, 0x1c, 0x00, 0x00, 0x00, 0x00
-   291 00000848 30361C00000000     
-   292 0000084F 0000000000CCCCCCCC-         db 0x00, 0x00, 0x00, 0x00, 0x00, 0xcc, 0xcc, 0xcc, 0xcc, 0xcc, 0xcc, 0x76, 0x00, 0x00, 0x00, 0x00
-   292 00000858 CCCC7600000000     
-   293 0000085F 0000000000C3C3C3C3-         db 0x00, 0x00, 0x00, 0x00, 0x00, 0xc3, 0xc3, 0xc3, 0xc3, 0x66, 0x3c, 0x18, 0x00, 0x00, 0x00, 0x00
-   293 00000868 663C1800000000     
-   294 0000086F 0000000000C3C3C3DB-         db 0x00, 0x00, 0x00, 0x00, 0x00, 0xc3, 0xc3, 0xc3, 0xdb, 0xdb, 0xff, 0x66, 0x00, 0x00, 0x00, 0x00
-   294 00000878 DBFF6600000000     
-   295 0000087F 0000000000C3663C18-         db 0x00, 0x00, 0x00, 0x00, 0x00, 0xc3, 0x66, 0x3c, 0x18, 0x3c, 0x66, 0xc3, 0x00, 0x00, 0x00, 0x00
-   295 00000888 3C66C300000000     
-   296 0000088F 0000000000C6C6C6C6-         db 0x00, 0x00, 0x00, 0x00, 0x00, 0xc6, 0xc6, 0xc6, 0xc6, 0xc6, 0xc6, 0x7e, 0x06, 0x0c, 0xf8, 0x00
-   296 00000898 C6C67E060CF800     
-   297 0000089F 0000000000FECC1830-         db 0x00, 0x00, 0x00, 0x00, 0x00, 0xfe, 0xcc, 0x18, 0x30, 0x60, 0xc6, 0xfe, 0x00, 0x00, 0x00, 0x00
-   297 000008A8 60C6FE00000000     
-   298 000008AF 00000E181818701818-         db 0x00, 0x00, 0x0e, 0x18, 0x18, 0x18, 0x70, 0x18, 0x18, 0x18, 0x18, 0x0e, 0x00, 0x00, 0x00, 0x00
-   298 000008B8 18180E00000000     
-   299 000008BF 000018181818001818-         db 0x00, 0x00, 0x18, 0x18, 0x18, 0x18, 0x00, 0x18, 0x18, 0x18, 0x18, 0x18, 0x00, 0x00, 0x00, 0x00
-   299 000008C8 18181800000000     
-   300 000008CF 0000701818180E1818-         db 0x00, 0x00, 0x70, 0x18, 0x18, 0x18, 0x0e, 0x18, 0x18, 0x18, 0x18, 0x70, 0x00, 0x00, 0x00, 0x00
-   300 000008D8 18187000000000     
-   301 000008DF 000076DC0000000000-         db 0x00, 0x00, 0x76, 0xdc, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
-   301 000008E8 00000000000000     
-   302 000008EF 0000000010386CC6C6-         db 0x00, 0x00, 0x00, 0x00, 0x10, 0x38, 0x6c, 0xc6, 0xc6, 0xc6, 0xfe, 0x00, 0x00, 0x00, 0x00, 0x00
-   302 000008F8 C6FE0000000000     
-   303 000008FF 00003C66C2C0C0C0C2-         db 0x00, 0x00, 0x3c, 0x66, 0xc2, 0xc0, 0xc0, 0xc0, 0xc2, 0x66, 0x3c, 0x0c, 0x06, 0x7c, 0x00, 0x00
-   303 00000908 663C0C067C0000     
-   304 0000090F 0000CC0000CCCCCCCC-         db 0x00, 0x00, 0xcc, 0x00, 0x00, 0xcc, 0xcc, 0xcc, 0xcc, 0xcc, 0xcc, 0x76, 0x00, 0x00, 0x00, 0x00
-   304 00000918 CCCC7600000000     
-   305 0000091F 000C1830007CC6FEC0-         db 0x00, 0x0c, 0x18, 0x30, 0x00, 0x7c, 0xc6, 0xfe, 0xc0, 0xc0, 0xc6, 0x7c, 0x00, 0x00, 0x00, 0x00
-   305 00000928 C0C67C00000000     
-   306 0000092F 0010386C00780C7CCC-         db 0x00, 0x10, 0x38, 0x6c, 0x00, 0x78, 0x0c, 0x7c, 0xcc, 0xcc, 0xcc, 0x76, 0x00, 0x00, 0x00, 0x00
-   306 00000938 CCCC7600000000     
-   307 0000093F 0000CC0000780C7CCC-         db 0x00, 0x00, 0xcc, 0x00, 0x00, 0x78, 0x0c, 0x7c, 0xcc, 0xcc, 0xcc, 0x76, 0x00, 0x00, 0x00, 0x00
-   307 00000948 CCCC7600000000     
-   308 0000094F 0060301800780C7CCC-         db 0x00, 0x60, 0x30, 0x18, 0x00, 0x78, 0x0c, 0x7c, 0xcc, 0xcc, 0xcc, 0x76, 0x00, 0x00, 0x00, 0x00
-   308 00000958 CCCC7600000000     
-   309 0000095F 00386C3800780C7CCC-         db 0x00, 0x38, 0x6c, 0x38, 0x00, 0x78, 0x0c, 0x7c, 0xcc, 0xcc, 0xcc, 0x76, 0x00, 0x00, 0x00, 0x00
-   309 00000968 CCCC7600000000     
-   310 0000096F 000000003C66606066-         db 0x00, 0x00, 0x00, 0x00, 0x3c, 0x66, 0x60, 0x60, 0x66, 0x3c, 0x0c, 0x06, 0x3c, 0x00, 0x00, 0x00
-   310 00000978 3C0C063C000000     
-   311 0000097F 0010386C007CC6FEC0-         db 0x00, 0x10, 0x38, 0x6c, 0x00, 0x7c, 0xc6, 0xfe, 0xc0, 0xc0, 0xc6, 0x7c, 0x00, 0x00, 0x00, 0x00
-   311 00000988 C0C67C00000000     
-   312 0000098F 0000C600007CC6FEC0-         db 0x00, 0x00, 0xc6, 0x00, 0x00, 0x7c, 0xc6, 0xfe, 0xc0, 0xc0, 0xc6, 0x7c, 0x00, 0x00, 0x00, 0x00
-   312 00000998 C0C67C00000000     
-   313 0000099F 00603018007CC6FEC0-         db 0x00, 0x60, 0x30, 0x18, 0x00, 0x7c, 0xc6, 0xfe, 0xc0, 0xc0, 0xc6, 0x7c, 0x00, 0x00, 0x00, 0x00
-   313 000009A8 C0C67C00000000     
-   314 000009AF 000066000038181818-         db 0x00, 0x00, 0x66, 0x00, 0x00, 0x38, 0x18, 0x18, 0x18, 0x18, 0x18, 0x3c, 0x00, 0x00, 0x00, 0x00
-   314 000009B8 18183C00000000     
-   315 000009BF 00183C660038181818-         db 0x00, 0x18, 0x3c, 0x66, 0x00, 0x38, 0x18, 0x18, 0x18, 0x18, 0x18, 0x3c, 0x00, 0x00, 0x00, 0x00
-   315 000009C8 18183C00000000     
-   316 000009CF 006030180038181818-         db 0x00, 0x60, 0x30, 0x18, 0x00, 0x38, 0x18, 0x18, 0x18, 0x18, 0x18, 0x3c, 0x00, 0x00, 0x00, 0x00
-   316 000009D8 18183C00000000     
-   317 000009DF 00C60010386CC6C6FE-         db 0x00, 0xc6, 0x00, 0x10, 0x38, 0x6c, 0xc6, 0xc6, 0xfe, 0xc6, 0xc6, 0xc6, 0x00, 0x00, 0x00, 0x00
-   317 000009E8 C6C6C600000000     
-   318 000009EF 386C3800386CC6C6FE-         db 0x38, 0x6c, 0x38, 0x00, 0x38, 0x6c, 0xc6, 0xc6, 0xfe, 0xc6, 0xc6, 0xc6, 0x00, 0x00, 0x00, 0x00
-   318 000009F8 C6C6C600000000     
-   319 000009FF 18306000FE66607C60-         db 0x18, 0x30, 0x60, 0x00, 0xfe, 0x66, 0x60, 0x7c, 0x60, 0x60, 0x66, 0xfe, 0x00, 0x00, 0x00, 0x00
-   319 00000A08 6066FE00000000     
-   320 00000A0F 00000000006E3B1B7E-         db 0x00, 0x00, 0x00, 0x00, 0x00, 0x6e, 0x3b, 0x1b, 0x7e, 0xd8, 0xdc, 0x77, 0x00, 0x00, 0x00, 0x00
-   320 00000A18 D8DC7700000000     
-   321 00000A1F 00003E6CCCCCFECCCC-         db 0x00, 0x00, 0x3e, 0x6c, 0xcc, 0xcc, 0xfe, 0xcc, 0xcc, 0xcc, 0xcc, 0xce, 0x00, 0x00, 0x00, 0x00
-   321 00000A28 CCCCCE00000000     
-   322 00000A2F 0010386C007CC6C6C6-         db 0x00, 0x10, 0x38, 0x6c, 0x00, 0x7c, 0xc6, 0xc6, 0xc6, 0xc6, 0xc6, 0x7c, 0x00, 0x00, 0x00, 0x00
-   322 00000A38 C6C67C00000000     
-   323 00000A3F 0000C600007CC6C6C6-         db 0x00, 0x00, 0xc6, 0x00, 0x00, 0x7c, 0xc6, 0xc6, 0xc6, 0xc6, 0xc6, 0x7c, 0x00, 0x00, 0x00, 0x00
-   323 00000A48 C6C67C00000000     
-   324 00000A4F 00603018007CC6C6C6-         db 0x00, 0x60, 0x30, 0x18, 0x00, 0x7c, 0xc6, 0xc6, 0xc6, 0xc6, 0xc6, 0x7c, 0x00, 0x00, 0x00, 0x00
-   324 00000A58 C6C67C00000000     
-   325 00000A5F 003078CC00CCCCCCCC-         db 0x00, 0x30, 0x78, 0xcc, 0x00, 0xcc, 0xcc, 0xcc, 0xcc, 0xcc, 0xcc, 0x76, 0x00, 0x00, 0x00, 0x00
-   325 00000A68 CCCC7600000000     
-   326 00000A6F 0060301800CCCCCCCC-         db 0x00, 0x60, 0x30, 0x18, 0x00, 0xcc, 0xcc, 0xcc, 0xcc, 0xcc, 0xcc, 0x76, 0x00, 0x00, 0x00, 0x00
-   326 00000A78 CCCC7600000000     
-   327 00000A7F 0000C60000C6C6C6C6-         db 0x00, 0x00, 0xc6, 0x00, 0x00, 0xc6, 0xc6, 0xc6, 0xc6, 0xc6, 0xc6, 0x7e, 0x06, 0x0c, 0x78, 0x00
-   327 00000A88 C6C67E060C7800     
-   328 00000A8F 00C6007CC6C6C6C6C6-         db 0x00, 0xc6, 0x00, 0x7c, 0xc6, 0xc6, 0xc6, 0xc6, 0xc6, 0xc6, 0xc6, 0x7c, 0x00, 0x00, 0x00, 0x00
-   328 00000A98 C6C67C00000000     
-   329 00000A9F 00C600C6C6C6C6C6C6-         db 0x00, 0xc6, 0x00, 0xc6, 0xc6, 0xc6, 0xc6, 0xc6, 0xc6, 0xc6, 0xc6, 0x7c, 0x00, 0x00, 0x00, 0x00
-   329 00000AA8 C6C67C00000000     
-   330 00000AAF 0018187EC3C0C0C0C3-         db 0x00, 0x18, 0x18, 0x7e, 0xc3, 0xc0, 0xc0, 0xc0, 0xc3, 0x7e, 0x18, 0x18, 0x00, 0x00, 0x00, 0x00
-   330 00000AB8 7E181800000000     
-   331 00000ABF 00386C6460F0606060-         db 0x00, 0x38, 0x6c, 0x64, 0x60, 0xf0, 0x60, 0x60, 0x60, 0x60, 0xe6, 0xfc, 0x00, 0x00, 0x00, 0x00
-   331 00000AC8 60E6FC00000000     
-   332 00000ACF 0000C3663C18FF18FF-         db 0x00, 0x00, 0xc3, 0x66, 0x3c, 0x18, 0xff, 0x18, 0xff, 0x18, 0x18, 0x18, 0x00, 0x00, 0x00, 0x00
-   332 00000AD8 18181800000000     
-   333 00000ADF 00FC66667C62666F66-         db 0x00, 0xfc, 0x66, 0x66, 0x7c, 0x62, 0x66, 0x6f, 0x66, 0x66, 0x66, 0xf3, 0x00, 0x00, 0x00, 0x00
-   333 00000AE8 6666F300000000     
-   334 00000AEF 000E1B1818187E1818-         db 0x00, 0x0e, 0x1b, 0x18, 0x18, 0x18, 0x7e, 0x18, 0x18, 0x18, 0x18, 0x18, 0xd8, 0x70, 0x00, 0x00
-   334 00000AF8 181818D8700000     
-   335 00000AFF 0018306000780C7CCC-         db 0x00, 0x18, 0x30, 0x60, 0x00, 0x78, 0x0c, 0x7c, 0xcc, 0xcc, 0xcc, 0x76, 0x00, 0x00, 0x00, 0x00
-   335 00000B08 CCCC7600000000     
-   336 00000B0F 000C18300038181818-         db 0x00, 0x0c, 0x18, 0x30, 0x00, 0x38, 0x18, 0x18, 0x18, 0x18, 0x18, 0x3c, 0x00, 0x00, 0x00, 0x00
-   336 00000B18 18183C00000000     
-   337 00000B1F 00183060007CC6C6C6-         db 0x00, 0x18, 0x30, 0x60, 0x00, 0x7c, 0xc6, 0xc6, 0xc6, 0xc6, 0xc6, 0x7c, 0x00, 0x00, 0x00, 0x00
-   337 00000B28 C6C67C00000000     
-   338 00000B2F 0018306000CCCCCCCC-         db 0x00, 0x18, 0x30, 0x60, 0x00, 0xcc, 0xcc, 0xcc, 0xcc, 0xcc, 0xcc, 0x76, 0x00, 0x00, 0x00, 0x00
-   338 00000B38 CCCC7600000000     
-   339 00000B3F 000076DC00DC666666-         db 0x00, 0x00, 0x76, 0xdc, 0x00, 0xdc, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x00, 0x00, 0x00, 0x00
-   339 00000B48 66666600000000     
-   340 00000B4F 76DC00C6E6F6FEDECE-         db 0x76, 0xdc, 0x00, 0xc6, 0xe6, 0xf6, 0xfe, 0xde, 0xce, 0xc6, 0xc6, 0xc6, 0x00, 0x00, 0x00, 0x00
-   340 00000B58 C6C6C600000000     
-   341 00000B5F 003C6C6C3E007E0000-         db 0x00, 0x3c, 0x6c, 0x6c, 0x3e, 0x00, 0x7e, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
-   341 00000B68 00000000000000     
-   342 00000B6F 00386C6C38007C0000-         db 0x00, 0x38, 0x6c, 0x6c, 0x38, 0x00, 0x7c, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
-   342 00000B78 00000000000000     
-   343 00000B7F 0000303000303060C0-         db 0x00, 0x00, 0x30, 0x30, 0x00, 0x30, 0x30, 0x60, 0xc0, 0xc6, 0xc6, 0x7c, 0x00, 0x00, 0x00, 0x00
-   343 00000B88 C6C67C00000000     
-   344 00000B8F 000000000000FEC0C0-         db 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xfe, 0xc0, 0xc0, 0xc0, 0xc0, 0x00, 0x00, 0x00, 0x00, 0x00
-   344 00000B98 C0C00000000000     
-   345 00000B9F 000000000000FE0606-         db 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xfe, 0x06, 0x06, 0x06, 0x06, 0x00, 0x00, 0x00, 0x00, 0x00
-   345 00000BA8 06060000000000     
-   346 00000BAF 00C0C0C2C6CC183060-         db 0x00, 0xc0, 0xc0, 0xc2, 0xc6, 0xcc, 0x18, 0x30, 0x60, 0xce, 0x9b, 0x06, 0x0c, 0x1f, 0x00, 0x00
-   346 00000BB8 CE9B060C1F0000     
-   347 00000BBF 00C0C0C2C6CC183066-         db 0x00, 0xc0, 0xc0, 0xc2, 0xc6, 0xcc, 0x18, 0x30, 0x66, 0xce, 0x96, 0x3e, 0x06, 0x06, 0x00, 0x00
-   347 00000BC8 CE963E06060000     
-   348 00000BCF 00001818001818183C-         db 0x00, 0x00, 0x18, 0x18, 0x00, 0x18, 0x18, 0x18, 0x3c, 0x3c, 0x3c, 0x18, 0x00, 0x00, 0x00, 0x00
-   348 00000BD8 3C3C1800000000     
-   349 00000BDF 0000000000366CD86C-         db 0x00, 0x00, 0x00, 0x00, 0x00, 0x36, 0x6c, 0xd8, 0x6c, 0x36, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
-   349 00000BE8 36000000000000     
-   350 00000BEF 0000000000D86C366C-         db 0x00, 0x00, 0x00, 0x00, 0x00, 0xd8, 0x6c, 0x36, 0x6c, 0xd8, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
-   350 00000BF8 D8000000000000     
-   351 00000BFF 114411441144114411-         db 0x11, 0x44, 0x11, 0x44, 0x11, 0x44, 0x11, 0x44, 0x11, 0x44, 0x11, 0x44, 0x11, 0x44, 0x11, 0x44
-   351 00000C08 44114411441144     
-   352 00000C0F 55AA55AA55AA55AA55-         db 0x55, 0xaa, 0x55, 0xaa, 0x55, 0xaa, 0x55, 0xaa, 0x55, 0xaa, 0x55, 0xaa, 0x55, 0xaa, 0x55, 0xaa
-   352 00000C18 AA55AA55AA55AA     
-   353 00000C1F DD77DD77DD77DD77DD-         db 0xdd, 0x77, 0xdd, 0x77, 0xdd, 0x77, 0xdd, 0x77, 0xdd, 0x77, 0xdd, 0x77, 0xdd, 0x77, 0xdd, 0x77
-   353 00000C28 77DD77DD77DD77     
-   354 00000C2F 181818181818181818-         db 0x18, 0x18, 0x18, 0x18, 0x18, 0x18, 0x18, 0x18, 0x18, 0x18, 0x18, 0x18, 0x18, 0x18, 0x18, 0x18
-   354 00000C38 18181818181818     
-   355 00000C3F 18181818181818F818-         db 0x18, 0x18, 0x18, 0x18, 0x18, 0x18, 0x18, 0xf8, 0x18, 0x18, 0x18, 0x18, 0x18, 0x18, 0x18, 0x18
-   355 00000C48 18181818181818     
-   356 00000C4F 1818181818F818F818-         db 0x18, 0x18, 0x18, 0x18, 0x18, 0xf8, 0x18, 0xf8, 0x18, 0x18, 0x18, 0x18, 0x18, 0x18, 0x18, 0x18
-   356 00000C58 18181818181818     
-   357 00000C5F 36363636363636F636-         db 0x36, 0x36, 0x36, 0x36, 0x36, 0x36, 0x36, 0xf6, 0x36, 0x36, 0x36, 0x36, 0x36, 0x36, 0x36, 0x36
-   357 00000C68 36363636363636     
-   358 00000C6F 00000000000000FE36-         db 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xfe, 0x36, 0x36, 0x36, 0x36, 0x36, 0x36, 0x36, 0x36
-   358 00000C78 36363636363636     
-   359 00000C7F 0000000000F818F818-         db 0x00, 0x00, 0x00, 0x00, 0x00, 0xf8, 0x18, 0xf8, 0x18, 0x18, 0x18, 0x18, 0x18, 0x18, 0x18, 0x18
-   359 00000C88 18181818181818     
-   360 00000C8F 3636363636F606F636-         db 0x36, 0x36, 0x36, 0x36, 0x36, 0xf6, 0x06, 0xf6, 0x36, 0x36, 0x36, 0x36, 0x36, 0x36, 0x36, 0x36
-   360 00000C98 36363636363636     
-   361 00000C9F 363636363636363636-         db 0x36, 0x36, 0x36, 0x36, 0x36, 0x36, 0x36, 0x36, 0x36, 0x36, 0x36, 0x36, 0x36, 0x36, 0x36, 0x36
-   361 00000CA8 36363636363636     
-   362 00000CAF 0000000000FE06F636-         db 0x00, 0x00, 0x00, 0x00, 0x00, 0xfe, 0x06, 0xf6, 0x36, 0x36, 0x36, 0x36, 0x36, 0x36, 0x36, 0x36
-   362 00000CB8 36363636363636     
-   363 00000CBF 3636363636F606FE00-         db 0x36, 0x36, 0x36, 0x36, 0x36, 0xf6, 0x06, 0xfe, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
-   363 00000CC8 00000000000000     
-   364 00000CCF 36363636363636FE00-         db 0x36, 0x36, 0x36, 0x36, 0x36, 0x36, 0x36, 0xfe, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
-   364 00000CD8 00000000000000     
-   365 00000CDF 1818181818F818F800-         db 0x18, 0x18, 0x18, 0x18, 0x18, 0xf8, 0x18, 0xf8, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
-   365 00000CE8 00000000000000     
-   366 00000CEF 00000000000000F818-         db 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xf8, 0x18, 0x18, 0x18, 0x18, 0x18, 0x18, 0x18, 0x18
-   366 00000CF8 18181818181818     
-   367 00000CFF 181818181818181F00-         db 0x18, 0x18, 0x18, 0x18, 0x18, 0x18, 0x18, 0x1f, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
-   367 00000D08 00000000000000     
-   368 00000D0F 18181818181818FF00-         db 0x18, 0x18, 0x18, 0x18, 0x18, 0x18, 0x18, 0xff, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
-   368 00000D18 00000000000000     
-   369 00000D1F 00000000000000FF18-         db 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xff, 0x18, 0x18, 0x18, 0x18, 0x18, 0x18, 0x18, 0x18
-   369 00000D28 18181818181818     
-   370 00000D2F 181818181818181F18-         db 0x18, 0x18, 0x18, 0x18, 0x18, 0x18, 0x18, 0x1f, 0x18, 0x18, 0x18, 0x18, 0x18, 0x18, 0x18, 0x18
-   370 00000D38 18181818181818     
-   371 00000D3F 00000000000000FF00-         db 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xff, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
-   371 00000D48 00000000000000     
-   372 00000D4F 18181818181818FF18-         db 0x18, 0x18, 0x18, 0x18, 0x18, 0x18, 0x18, 0xff, 0x18, 0x18, 0x18, 0x18, 0x18, 0x18, 0x18, 0x18
-   372 00000D58 18181818181818     
-   373 00000D5F 18181818181F181F18-         db 0x18, 0x18, 0x18, 0x18, 0x18, 0x1f, 0x18, 0x1f, 0x18, 0x18, 0x18, 0x18, 0x18, 0x18, 0x18, 0x18
-   373 00000D68 18181818181818     
-   374 00000D6F 363636363636363736-         db 0x36, 0x36, 0x36, 0x36, 0x36, 0x36, 0x36, 0x37, 0x36, 0x36, 0x36, 0x36, 0x36, 0x36, 0x36, 0x36
-   374 00000D78 36363636363636     
-   375 00000D7F 363636363637303F00-         db 0x36, 0x36, 0x36, 0x36, 0x36, 0x37, 0x30, 0x3f, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
-   375 00000D88 00000000000000     
-   376 00000D8F 00000000003F303736-         db 0x00, 0x00, 0x00, 0x00, 0x00, 0x3f, 0x30, 0x37, 0x36, 0x36, 0x36, 0x36, 0x36, 0x36, 0x36, 0x36
-   376 00000D98 36363636363636     
-   377 00000D9F 3636363636F700FF00-         db 0x36, 0x36, 0x36, 0x36, 0x36, 0xf7, 0x00, 0xff, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
-   377 00000DA8 00000000000000     
-   378 00000DAF 0000000000FF00F736-         db 0x00, 0x00, 0x00, 0x00, 0x00, 0xff, 0x00, 0xf7, 0x36, 0x36, 0x36, 0x36, 0x36, 0x36, 0x36, 0x36
-   378 00000DB8 36363636363636     
-   379 00000DBF 363636363637303736-         db 0x36, 0x36, 0x36, 0x36, 0x36, 0x37, 0x30, 0x37, 0x36, 0x36, 0x36, 0x36, 0x36, 0x36, 0x36, 0x36
-   379 00000DC8 36363636363636     
-   380 00000DCF 0000000000FF00FF00-         db 0x00, 0x00, 0x00, 0x00, 0x00, 0xff, 0x00, 0xff, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
-   380 00000DD8 00000000000000     
-   381 00000DDF 3636363636F700F736-         db 0x36, 0x36, 0x36, 0x36, 0x36, 0xf7, 0x00, 0xf7, 0x36, 0x36, 0x36, 0x36, 0x36, 0x36, 0x36, 0x36
-   381 00000DE8 36363636363636     
-   382 00000DEF 1818181818FF00FF00-         db 0x18, 0x18, 0x18, 0x18, 0x18, 0xff, 0x00, 0xff, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
-   382 00000DF8 00000000000000     
-   383 00000DFF 36363636363636FF00-         db 0x36, 0x36, 0x36, 0x36, 0x36, 0x36, 0x36, 0xff, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
-   383 00000E08 00000000000000     
-   384 00000E0F 0000000000FF00FF18-         db 0x00, 0x00, 0x00, 0x00, 0x00, 0xff, 0x00, 0xff, 0x18, 0x18, 0x18, 0x18, 0x18, 0x18, 0x18, 0x18
-   384 00000E18 18181818181818     
-   385 00000E1F 00000000000000FF36-         db 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xff, 0x36, 0x36, 0x36, 0x36, 0x36, 0x36, 0x36, 0x36
-   385 00000E28 36363636363636     
-   386 00000E2F 363636363636363F00-         db 0x36, 0x36, 0x36, 0x36, 0x36, 0x36, 0x36, 0x3f, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
-   386 00000E38 00000000000000     
-   387 00000E3F 18181818181F181F00-         db 0x18, 0x18, 0x18, 0x18, 0x18, 0x1f, 0x18, 0x1f, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
-   387 00000E48 00000000000000     
-   388 00000E4F 00000000001F181F18-         db 0x00, 0x00, 0x00, 0x00, 0x00, 0x1f, 0x18, 0x1f, 0x18, 0x18, 0x18, 0x18, 0x18, 0x18, 0x18, 0x18
-   388 00000E58 18181818181818     
-   389 00000E5F 000000000000003F36-         db 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x3f, 0x36, 0x36, 0x36, 0x36, 0x36, 0x36, 0x36, 0x36
-   389 00000E68 36363636363636     
-   390 00000E6F 36363636363636FF36-         db 0x36, 0x36, 0x36, 0x36, 0x36, 0x36, 0x36, 0xff, 0x36, 0x36, 0x36, 0x36, 0x36, 0x36, 0x36, 0x36
-   390 00000E78 36363636363636     
-   391 00000E7F 1818181818FF18FF18-         db 0x18, 0x18, 0x18, 0x18, 0x18, 0xff, 0x18, 0xff, 0x18, 0x18, 0x18, 0x18, 0x18, 0x18, 0x18, 0x18
-   391 00000E88 18181818181818     
-   392 00000E8F 18181818181818F800-         db 0x18, 0x18, 0x18, 0x18, 0x18, 0x18, 0x18, 0xf8, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
-   392 00000E98 00000000000000     
-   393 00000E9F 000000000000001F18-         db 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x1f, 0x18, 0x18, 0x18, 0x18, 0x18, 0x18, 0x18, 0x18
-   393 00000EA8 18181818181818     
-   394 00000EAF FFFFFFFFFFFFFFFFFF-         db 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff
-   394 00000EB8 FFFFFFFFFFFFFF     
-   395 00000EBF 00000000000000FFFF-         db 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff
-   395 00000EC8 FFFFFFFFFFFFFF     
-   396 00000ECF F0F0F0F0F0F0F0F0F0-         db 0xf0, 0xf0, 0xf0, 0xf0, 0xf0, 0xf0, 0xf0, 0xf0, 0xf0, 0xf0, 0xf0, 0xf0, 0xf0, 0xf0, 0xf0, 0xf0
-   396 00000ED8 F0F0F0F0F0F0F0     
-   397 00000EDF 0F0F0F0F0F0F0F0F0F-         db 0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f
-   397 00000EE8 0F0F0F0F0F0F0F     
-   398 00000EEF FFFFFFFFFFFFFF0000-         db 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
-   398 00000EF8 00000000000000     
-   399 00000EFF 000000000076DCD8D8-         db 0x00, 0x00, 0x00, 0x00, 0x00, 0x76, 0xdc, 0xd8, 0xd8, 0xd8, 0xdc, 0x76, 0x00, 0x00, 0x00, 0x00
-   399 00000F08 D8DC7600000000     
-   400 00000F0F 000078CCCCCCD8CCC6-         db 0x00, 0x00, 0x78, 0xcc, 0xcc, 0xcc, 0xd8, 0xcc, 0xc6, 0xc6, 0xc6, 0xcc, 0x00, 0x00, 0x00, 0x00
-   400 00000F18 C6C6CC00000000     
-   401 00000F1F 0000FEC6C6C0C0C0C0-         db 0x00, 0x00, 0xfe, 0xc6, 0xc6, 0xc0, 0xc0, 0xc0, 0xc0, 0xc0, 0xc0, 0xc0, 0x00, 0x00, 0x00, 0x00
-   401 00000F28 C0C0C000000000     
-   402 00000F2F 00000000FE6C6C6C6C-         db 0x00, 0x00, 0x00, 0x00, 0xfe, 0x6c, 0x6c, 0x6c, 0x6c, 0x6c, 0x6c, 0x6c, 0x00, 0x00, 0x00, 0x00
-   402 00000F38 6C6C6C00000000     
-   403 00000F3F 000000FEC660301830-         db 0x00, 0x00, 0x00, 0xfe, 0xc6, 0x60, 0x30, 0x18, 0x30, 0x60, 0xc6, 0xfe, 0x00, 0x00, 0x00, 0x00
-   403 00000F48 60C6FE00000000     
-   404 00000F4F 00000000007ED8D8D8-         db 0x00, 0x00, 0x00, 0x00, 0x00, 0x7e, 0xd8, 0xd8, 0xd8, 0xd8, 0xd8, 0x70, 0x00, 0x00, 0x00, 0x00
-   404 00000F58 D8D87000000000     
-   405 00000F5F 000000006666666666-         db 0x00, 0x00, 0x00, 0x00, 0x66, 0x66, 0x66, 0x66, 0x66, 0x7c, 0x60, 0x60, 0xc0, 0x00, 0x00, 0x00
-   405 00000F68 7C6060C0000000     
-   406 00000F6F 0000000076DC181818-         db 0x00, 0x00, 0x00, 0x00, 0x76, 0xdc, 0x18, 0x18, 0x18, 0x18, 0x18, 0x18, 0x00, 0x00, 0x00, 0x00
-   406 00000F78 18181800000000     
-   407 00000F7F 0000007E183C666666-         db 0x00, 0x00, 0x00, 0x7e, 0x18, 0x3c, 0x66, 0x66, 0x66, 0x3c, 0x18, 0x7e, 0x00, 0x00, 0x00, 0x00
-   407 00000F88 3C187E00000000     
-   408 00000F8F 000000386CC6C6FEC6-         db 0x00, 0x00, 0x00, 0x38, 0x6c, 0xc6, 0xc6, 0xfe, 0xc6, 0xc6, 0x6c, 0x38, 0x00, 0x00, 0x00, 0x00
-   408 00000F98 C66C3800000000     
-   409 00000F9F 0000386CC6C6C66C6C-         db 0x00, 0x00, 0x38, 0x6c, 0xc6, 0xc6, 0xc6, 0x6c, 0x6c, 0x6c, 0x6c, 0xee, 0x00, 0x00, 0x00, 0x00
-   409 00000FA8 6C6CEE00000000     
-   410 00000FAF 00001E30180C3E6666-         db 0x00, 0x00, 0x1e, 0x30, 0x18, 0x0c, 0x3e, 0x66, 0x66, 0x66, 0x66, 0x3c, 0x00, 0x00, 0x00, 0x00
-   410 00000FB8 66663C00000000     
-   411 00000FBF 00000000007EDBDBDB-         db 0x00, 0x00, 0x00, 0x00, 0x00, 0x7e, 0xdb, 0xdb, 0xdb, 0x7e, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
-   411 00000FC8 7E000000000000     
-   412 00000FCF 00000003067EDBDBF3-         db 0x00, 0x00, 0x00, 0x03, 0x06, 0x7e, 0xdb, 0xdb, 0xf3, 0x7e, 0x60, 0xc0, 0x00, 0x00, 0x00, 0x00
-   412 00000FD8 7E60C000000000     
-   413 00000FDF 00001C3060607C6060-         db 0x00, 0x00, 0x1c, 0x30, 0x60, 0x60, 0x7c, 0x60, 0x60, 0x60, 0x30, 0x1c, 0x00, 0x00, 0x00, 0x00
-   413 00000FE8 60301C00000000     
-   414 00000FEF 0000007CC6C6C6C6C6-         db 0x00, 0x00, 0x00, 0x7c, 0xc6, 0xc6, 0xc6, 0xc6, 0xc6, 0xc6, 0xc6, 0xc6, 0x00, 0x00, 0x00, 0x00
-   414 00000FF8 C6C6C600000000     
-   415 00000FFF 00000000FE0000FE00-         db 0x00, 0x00, 0x00, 0x00, 0xfe, 0x00, 0x00, 0xfe, 0x00, 0x00, 0xfe, 0x00, 0x00, 0x00, 0x00, 0x00
-   415 00001008 00FE0000000000     
-   416 0000100F 0000000018187E1818-         db 0x00, 0x00, 0x00, 0x00, 0x18, 0x18, 0x7e, 0x18, 0x18, 0x00, 0x00, 0xff, 0x00, 0x00, 0x00, 0x00
-   416 00001018 0000FF00000000     
-   417 0000101F 00000030180C060C18-         db 0x00, 0x00, 0x00, 0x30, 0x18, 0x0c, 0x06, 0x0c, 0x18, 0x30, 0x00, 0x7e, 0x00, 0x00, 0x00, 0x00
-   417 00001028 30007E00000000     
-   418 0000102F 0000000C1830603018-         db 0x00, 0x00, 0x00, 0x0c, 0x18, 0x30, 0x60, 0x30, 0x18, 0x0c, 0x00, 0x7e, 0x00, 0x00, 0x00, 0x00
-   418 00001038 0C007E00000000     
-   419 0000103F 00000E1B1B18181818-         db 0x00, 0x00, 0x0e, 0x1b, 0x1b, 0x18, 0x18, 0x18, 0x18, 0x18, 0x18, 0x18, 0x18, 0x18, 0x18, 0x18
-   419 00001048 18181818181818     
-   420 0000104F 1818181818181818D8-         db 0x18, 0x18, 0x18, 0x18, 0x18, 0x18, 0x18, 0x18, 0xd8, 0xd8, 0xd8, 0x70, 0x00, 0x00, 0x00, 0x00
-   420 00001058 D8D87000000000     
-   421 0000105F 000000001818007E00-         db 0x00, 0x00, 0x00, 0x00, 0x18, 0x18, 0x00, 0x7e, 0x00, 0x18, 0x18, 0x00, 0x00, 0x00, 0x00, 0x00
-   421 00001068 18180000000000     
-   422 0000106F 000000000076DC0076-         db 0x00, 0x00, 0x00, 0x00, 0x00, 0x76, 0xdc, 0x00, 0x76, 0xdc, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
-   422 00001078 DC000000000000     
-   423 0000107F 00386C6C3800000000-         db 0x00, 0x38, 0x6c, 0x6c, 0x38, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
-   423 00001088 00000000000000     
-   424 0000108F 000000000000001818-         db 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x18, 0x18, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
-   424 00001098 00000000000000     
-   425 0000109F 000000000000000018-         db 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x18, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
-   425 000010A8 00000000000000     
-   426 000010AF 000F0C0C0C0C0CEC6C-         db 0x00, 0x0f, 0x0c, 0x0c, 0x0c, 0x0c, 0x0c, 0xec, 0x6c, 0x6c, 0x3c, 0x1c, 0x00, 0x00, 0x00, 0x00
-   426 000010B8 6C3C1C00000000     
-   427 000010BF 00D86C6C6C6C6C0000-         db 0x00, 0xd8, 0x6c, 0x6c, 0x6c, 0x6c, 0x6c, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
-   427 000010C8 00000000000000     
-   428 000010CF 0070D83060C8F80000-         db 0x00, 0x70, 0xd8, 0x30, 0x60, 0xc8, 0xf8, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
-   428 000010D8 00000000000000     
-   429 000010DF 000000007C7C7C7C7C-         db 0x00, 0x00, 0x00, 0x00, 0x7c, 0x7c, 0x7c, 0x7c, 0x7c, 0x7c, 0x7c, 0x00, 0x00, 0x00, 0x00, 0x00
-   429 000010E8 7C7C0000000000     
-   430 000010EF 000000000000000000-         db 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
-   430 000010F8 00000000000000     
-   431                                  
-   432                                  ;--------------------------------------------------------------------------------
-   433                                  ; Punto de entrada
-   434                                  ;--------------------------------------------------------------------------------
-   435                                  bios_init:
-   436 000010FF 87DB                        xchg    bx, bx              ; Magic breakpoint
-   437                                  
-   438                                  ; Recorrer bus PCI. Bochs solo soporta bus cero ya que no tiene "PCI to PCI bridge".
-   439                                  ; Cada bus tiene hasta 32 dispositivos.
-   440                                  ; Si el dispositivo es compuesto puede tener hasta 8 funciones.
-   441                                  ; Formato puerto 0x0CF8:
-   442                                  ; Bit 31 = Siempre a "1"
-   443                                  ; Bits 30-24 = Reservado (siempre a "0")
-   444                                  ; Bits 23-16 = Número de bus (0 en nuestra aplicación)
-   445                                  ; Bits 15-11 = Número de dispositivo (0-31)
-   446                                  ; Bits 10-8 = Número de función (0-7)
-   447                                  ; Bits 7-2 = Número de registro
-   448                                  ; Bits 1-0: Siempre cero.
-   449                                  
-   450                                  recorrer_bus_pci:
-   451 00001101 66BD00400000                mov     ebp, 0x4000         ; Primera dirección de entrada/salida para PCI.
-   452 00001107 66BF000000C0                mov     edi, 0xC0000000     ; Primera dirección a asignar a dispositivos PCI.
-   453 0000110D 66BE00000080                mov     esi, 0x80000000     ; Bus 0, dispositivo 0, función 0.
-   454                                  
-   455                                  ciclo_recorrer_bus_pci:
-   456 00001113 6681FE00000180              cmp     esi, 0x80010000     ; Verificar si se recorrió todo el bus 0.
-   457 0000111A 0F843001                    jz      fin_recorrido_pci
-   458                                                                  ; Leer registro 0: Bits 31-16: device ID,
-   459                                  leer_registro_pci 0             ; Bits 15-0: vendor ID.
-   459 0000111E 66B800000000        <1>  mov eax, %1
-   459 00001124 6609F0              <1>  or eax, esi
-   459 00001127 BAF80C              <1>  mov dx, 0x0CF8
-   459 0000112A 66EF                <1>  out dx, eax
-   459 0000112C BAFC0C              <1>  mov dx, 0x0CFC
-   459 0000112F 66ED                <1>  in eax, dx
-   460 00001131 83F8FF                      cmp     ax, 0xFFFF          ; Vendor ID 0xFFFF no existe.
-   461 00001134 7509                        jnz     dispositivo_hallado
-   462 00001136 6681C600080000              add     esi,0x0800          ; Ir al siguiente dispositivo
-   463 0000113D EBD4                        jmp     ciclo_recorrer_bus_pci
-   464                                  
-   465                                  dispositivo_hallado:            ; Leer registro 0x0C: Bit 23: multiple function bit
-   466                                      leer_registro_pci 0x0C
-   466 0000113F 66B80C000000        <1>  mov eax, %1
-   466 00001145 6609F0              <1>  or eax, esi
-   466 00001148 BAF80C              <1>  mov dx, 0x0CF8
-   466 0000114B 66EF                <1>  out dx, eax
-   466 0000114D BAFC0C              <1>  mov dx, 0x0CFC
-   466 00001150 66ED                <1>  in eax, dx
-   467 00001152 B508                        mov     ch, 8               ; Cantidad de funciones a procesar.
-   468 00001154 660FBAE017                  bt      eax, 23
-   469 00001159 7202                        jc      procesar_funcion
-   470 0000115B B501                        mov     ch, 1
-   471                                      
-   472                                  procesar_funcion:               ; Leer registro 0: Bits 31-16: device ID,
-   473                                      leer_registro_pci 0         ; Bits 15-0: vendor ID.
-   473 0000115D 66B800000000        <1>  mov eax, %1
-   473 00001163 6609F0              <1>  or eax, esi
-   473 00001166 BAF80C              <1>  mov dx, 0x0CF8
-   473 00001169 66EF                <1>  out dx, eax
-   473 0000116B BAFC0C              <1>  mov dx, 0x0CFC
-   473 0000116E 66ED                <1>  in eax, dx
-   474 00001170 83F8FF                      cmp     ax, 0xFFFF          ; Vendor ID 0xFFFF no existe.
-   475 00001173 7523                        jnz     funcion_hallada   
-   476                                  
-   477                                  ir_a_siguiente_funcion:
-   478 00001175 6681C600010000              add     esi, 0x0100         ; Ir a la siguiente función
-   479 0000117C FECD                        dec     ch
-   480 0000117E 75DD                        jnz     procesar_funcion
-   481 00001180 6681EE00010000              sub     esi, 0x0100         ; Ir al siguiente dispositivo
-   482 00001187 6681CE00070000              or      esi, 0x0700
-   483 0000118E 6681C600010000              add     esi, 0x0100
-   484 00001195 E97BFF                      jmp     ciclo_recorrer_bus_pci
-   485                                  
-   486                                  funcion_hallada:                ; Leer registro 0x0C: Bits 22-16: header type
-   487                                      leer_registro_pci 0x0C
-   487 00001198 66B80C000000        <1>  mov eax, %1
-   487 0000119E 6609F0              <1>  or eax, esi
-   487 000011A1 BAF80C              <1>  mov dx, 0x0CF8
-   487 000011A4 66EF                <1>  out dx, eax
-   487 000011A6 BAFC0C              <1>  mov dx, 0x0CFC
-   487 000011A9 66ED                <1>  in eax, dx
-   488 000011AB 66A900007F00                test    eax,0x007F0000      ; Solo soportamos header type cero.
-   489 000011B1 75C2                        jnz     ir_a_siguiente_funcion
-   490                                      leer_registro_pci 0x08      ; Leer clase y subclase.
-   490 000011B3 66B808000000        <1>  mov eax, %1
-   490 000011B9 6609F0              <1>  or eax, esi
-   490 000011BC BAF80C              <1>  mov dx, 0x0CF8
-   490 000011BF 66EF                <1>  out dx, eax
-   490 000011C1 BAFC0C              <1>  mov dx, 0x0CFC
-   490 000011C4 66ED                <1>  in eax, dx
-   491 000011C6 B110                        mov     cl, 0x10            ; Apuntar al primer Base Address Register (BAR)
-   492                                  
-   493                                  ciclo_llenar_BAR:
-   494 000011C8 660FB6C1                    movzx   eax, cl
-   495 000011CC 6609F0                      or      eax, esi 
-   496 000011CF BAF80C                      mov     dx, 0x0CF8
-   497 000011D2 66EF                        out     dx, eax
-   498 000011D4 66B8FFFFFFFF                mov     eax, 0xFFFFFFFF     ; Escribir 0xFFFFFFFF en el BAR
-   499 000011DA BAFC0C                      mov     dx, 0x0CFC  
-   500 000011DD 66EF                        out     dx, eax
-   501 000011DF 660FB6C1                    movzx   eax, cl
-   502                                      leer_registro_pci eax       ; Leerlo.
-   502 000011E3 6689C0              <1>  mov eax, %1
-   502 000011E6 6609F0              <1>  or eax, esi
-   502 000011E9 BAF80C              <1>  mov dx, 0x0CF8
-   502 000011EC 66EF                <1>  out dx, eax
-   502 000011EE BAFC0C              <1>  mov dx, 0x0CFC
-   502 000011F1 66ED                <1>  in eax, dx
-   503 000011F3 A801                        test    al, 1               ; Ver si el dispositivo está mapeado en memoria.
-   504 000011F5 741E                        jz      mapeado_en_memoria
-   505 000011F7 83E0FC                      and     ax, 0xFFFC          ; Eliminar los dos bits que no se usan para ports.
-   506 000011FA 7445                        jz      ajustar_siguiente_BAR  ; El dispositivo no usa este BAR.
-   507 000011FC 66F7D0                      not     eax                 ; Convertir en cantidad de bytes que se usa - 1.
-   508 000011FF 6689C3                      mov     ebx, eax
-   509 00001202 4D                          dec     bp                  ; Poner BP en dirección múltiplo de la cantidad
-   510 00001203 09C5                        or      bp, ax              ; de bytes que usa esta función.
-   511 00001205 45                          inc     bp
-   512 00001206 660FB6C1                    movzx   eax, cl
-   513 0000120A 6609F0                      or      eax, esi 
-   514 0000120D BAF80C                      mov     dx, 0x0CF8
-   515 00001210 6689E8                      mov     eax, ebp
-   516 00001213 EB22                        jmp     ajustar_BAR
-   517                                  
-   518                                  mapeado_en_memoria:
-   519 00001215 6683E0F0                    and     eax, 0xFFFFFFF0     ; Eliminar los 4 bits que no se usan para puntero.
-   520 00001219 7426                        jz      ajustar_siguiente_BAR  ; El dispositivo no usa este BAR.
-   521 0000121B 66F7D0                      not     eax                 ; Convertir en cantidad de bytes que se usa - 1.
-   522 0000121E 6689C3                      mov     ebx, eax
-   523 00001221 664F                        dec     edi                 ; Poner EDI en dirección múltiplo de la cantidad
-   524 00001223 6609C7                      or      edi, eax            ; de bytes que usa esta función.
-   525 00001226 6647                        inc     edi
-   526 00001228 660FB6C1                    movzx   eax, cl
-   527 0000122C 6609F0                      or      eax, esi 
-   528 0000122F BAF80C                      mov     dx, 0x0CF8
-   529 00001232 66EF                        out     dx, eax
-   530 00001234 6689F8                      mov     eax, edi
-   531                                  
-   532                                  ajustar_BAR:
-   533 00001237 BAFC0C                      mov     dx, 0x0CFC  
-   534 0000123A 66EF                        out     dx, eax
-   535 0000123C 6601DD                      add     ebp, ebx            ; Apuntar a puerto después de esta función.
-   536 0000123F 6645                        inc     ebp
-   537                                  
-   538                                  ajustar_siguiente_BAR:
-   539 00001241 80C104                      add     cl, 4               ; Apuntar al siguiente BAR.
-   540 00001244 80F928                      cmp     cl, 0x28            ; Todos los BAR listos?
-   541 00001247 0F857DFF                    jnz     ciclo_llenar_BAR
-   542 0000124B E927FF                      jmp     ir_a_siguiente_funcion
-   543                                  fin_recorrido_pci:
-   544                                   
-   545                                  ;--------------------------------------------------------------------------------
-   546                                  ; Inicializar pantalla con texto
-   547                                  ;--------------------------------------------------------------------------------
-   548                                  habilitar_modo_texto:
-   549                                  ; Set MISC regs
-   550 0000124E BAC203                      mov     dx, 0x3C2           ; VGA_MISC_ADDR
-   551 00001251 B067                        mov     al, 0x67
-   552 00001253 EE                          out     dx, al
-   553 00001254 BADA03                      mov     dx, 0x3DA           ; VGA_STATUS_ADDR
-   554 00001257 B000                        mov     al, 0
-   555 00001259 EE                          out     dx, al
-   556                                  ; Send SEQ regs
-   557 0000125A FC                          cld
-   558 0000125B B100                        mov     cl, 0
-   559 0000125D BE[0300]                    mov     si, seq_regs_data
-   560                                  
-   561                                  seq_regs_loop:
-   562 00001260 BAC403                      mov dx, 0x3C4               ; Puerto del secuenciador VGA (índice)
-   563 00001263 88C8                        mov al, cl
-   564 00001265 EE                          out dx, al
-   565                                  
-   566 00001266 42                          inc     dx                  ; Puerto del secuenciador VGA (datos)
-   567 00001267 2EAC                        cs  lodsb                   ; Leer dato a escribit en puerto.
-   568 00001269 EE                          out     dx, al              ; Escribir en controlador VGA.
-   569                                  
-   570                                  ; continue loop
-   571 0000126A FEC1                        inc     cl                  ; Siguiente índice.
-   572 0000126C 80F905                      cmp     cl, 5
-   573 0000126F 75EF                        jne     seq_regs_loop
-   574                                  
-   575                                  ; Eliminar protección de los registros 0 a 7 del controlador VGA.
-   576 00001271 B8112C                      mov     ax, 0x2C11
-   577 00001274 BAD403                      mov     dx, 0x3D4           ; VGA_CRTC_ADDR
-   578 00001277 EF                          out     dx, ax
-   579                                  
-   580                                  ; send CRTC regs
-   581 00001278 B100                        mov     cl, 0
-   582 0000127A BE[0800]                    mov     si, crtc_regs_data
-   583                                  crtc_regs_loop:
-   584 0000127D BAD403                      mov     dx, 0x3D4           ; Puerto de índice del controlador VGA
-   585 00001280 88C8                        mov     al, cl
-   586 00001282 EE                          out     dx, al
-   587 00001283 2EAC                        cs      lodsb
-   588 00001285 42                          inc     dx                  ; Puerto de datos del controlador VGA.
-   589 00001286 EE                          out     dx, al
-   590 00001287 FEC1                        inc     cl
-   591 00001289 80F919                      cmp     cl, 25
-   592 0000128C 72EF                        jb  crtc_regs_loop
-   593                                  
-   594                                  inicializar_paleta:
-   595 0000128E B100                        mov     cl, 0
-   596 00001290 BE[3F00]                    mov     si, palette_data
-   597                                  inicializar_paleta_loop:
-   598 00001293 BAC803                      mov     dx, 0x3C8           ; Puerto de índice paleta
-   599 00001296 88C8                        mov     al, cl              ; Escribir número de registro
-   600 00001298 EE                          out     dx, al
-   601 00001299 42                          inc     dx                  ; Apuntar al puerto de datos.
-   602 0000129A 2EAC                        cs      lodsb               ; Leer dato a cargar en el registro.
-   603 0000129C EE                          out     dx, al              ; Cargar dato en el registro.
-   604 0000129D 2EAC                        cs      lodsb               ; Leer dato a cargar en el registro.
-   605 0000129F EE                          out     dx, al              ; Cargar dato en el registro.
-   606 000012A0 2EAC                        cs      lodsb               ; Leer dato a cargar en el registro.
-   607 000012A2 EE                          out     dx, al              ; Cargar dato en el registro.
-   608 000012A3 FEC1                        inc     cl
-   609 000012A5 80F940                      cmp     cl,64
-   610 000012A8 72E9                        jb      inicializar_paleta_loop
-   611                                  ;Inicializar registros del controlador gráfico de VGA.
-   612 000012AA B100                        mov     cl, 0
-   613 000012AC BE[2100]                    mov     si, graphics_regs_data
-   614                                  graphics_regs_loop:
-   615                                  ; send register number to 3CE
-   616 000012AF BACE03                      mov     dx, 0x3CE           ; VGA_GRAPHICS_CONTROLLER_ADDR
-   617 000012B2 88C8                        mov     al, cl
-   618 000012B4 EE                          out     dx, al
-   619                                  
-   620                                  ; send register value to 3CF
-   621 000012B5 2EAC                        cs      lodsb
-   622 000012B7 42                          inc     dx
-   623 000012B8 EE                          out     dx, al
-   624                                  
-   625                                  ; continue GRAPHICS loop
-   626 000012B9 FEC1                        inc     cl
-   627 000012BB 80F909                      cmp     cl, 9
-   628 000012BE 72EF                        jb      graphics_regs_loop
-   629                                  
-   630                                  ; Habilitar escritura al puerto del controlador de atributos
-   631 000012C0 BADA03                      mov     dx, 0x3DA           ; VGA STATUS ADDR
-   632 000012C3 EC                          in      al, dx
-   633                                  ; Inicializar registros del controlador de atributos.
-   634 000012C4 B100                        mov     cl, 0
-   635 000012C6 BE[2A00]                    mov     si, attrcon_regs_data
-   636                                  attrcon_regs_loop:
-   637                                  ; Apuntar al controlador de atributos.
-   638 000012C9 BAC003                      mov     dx, 0x3C0           ; VGA_ATTRCON_ADDR
-   639 000012CC 88C8                        mov     al, cl              ; Escribir número de registro
-   640 000012CE EE                          out     dx, al
-   641 000012CF 2EAC                        cs      lodsb               ; Leer dato a cargar en el registro.
-   642 000012D1 EE                          out     dx, al              ; Cargar dato en el registro.
-   643                                   
-   644 000012D2 FEC1                        inc     cl                  ; Apuntar al siguiente registro.
-   645 000012D4 80F915                      cmp     cl, 21              ; Ver si se escribieron todos los registros del ATTRCON.
-   646 000012D7 72F0                        jb      attrcon_regs_loop   ; Saltar si no es así.
-   647                                  
-   648 000012D9 B020                        mov     al, 0x20            ; Reactivar el refresco de pantalla porque la
-   649 000012DB EE                          out     dx, al              ; escritura a registros de ATTRCON lo desactiva.
-   650                                  
-   651 000012DC BACE03                      mov     dx, 0x03ce          ; borrar modo par/impar
-   652 000012DF B80500                      mov     ax, 5
-   653 000012E2 EF                          out     dx, ax
-   654                                  
-   655 000012E3 B80604                      mov     ax, 0x0406          ; Mapear memoria VGA a 0xA0000.
-   656 000012E6 EF                          out     dx, ax
-   657                                  
-   658 000012E7 BAC403                      mov     dx, 0x03c4          ; Poner el plano de bits número 2
-   659 000012EA B80204                      mov     ax, 0x0402
-   660 000012ED EF                          out     dx, ax
-   661                                  
-   662 000012EE B80406                      mov     ax, 0x0604          ; Borrar modo par/impar.
-   663 000012F1 EF                          out     dx, ax
-   664                                  
-   665 000012F2 B800A0                      mov     ax, 0xA000          ; Copiar mapa de caracteres.
-   666 000012F5 8EC0                        mov     es, ax
-   667 000012F7 BF0000                      mov     di, 0x0000
-   668 000012FA BE[FF00]                    mov     si, font16x8
-   669 000012FD B90001                      mov     cx, 256
-   670                                  ciclo_copia_fonts:
-   671 00001300 2E66A5                      cs      movsd               ; Copiar 16 bytes al bitmap.
-   672 00001303 2E66A5                      cs      movsd
-   673 00001306 2E66A5                      cs      movsd
-   674 00001309 2E66A5                      cs      movsd
-   675 0000130C 83C710                      add     di, 16              ; Saltear 16 bytes (VGA requiere 32 bytes/carácter)
-   676 0000130F E2EF                        loop    ciclo_copia_fonts
-   677                                  
-   678 00001311 B80203                      mov     ax, 0x0302          ; Volver a la operación normal.
-   679 00001314 EF                          out     dx, ax
-   680 00001315 B80402                      mov     ax, 0x0204
-   681 00001318 EF                          out     dx, ax
-   682 00001319 BACE03                      mov     dx, 0x03ce
-   683 0000131C B80510                      mov     ax, 0x1005
-   684 0000131F EF                          out     dx, ax
-   685 00001320 B8060E                      mov     ax, 0x0E06
-   686 00001323 EF                          out     dx, ax
-   687                                        
-   688                                  
-   689                                  
+    62                                        L_1:
+    63 0000002D 80FB01                          cmp bl, 0x1
+    64 00000030 B731                            mov bh, ASCII_TECLA_1 ;  ; 
+    65 00000032 7463                            jz GUARDADO_LETRA
+    66                                  
+    67                                        L_2:
+    68 00000034 80FB02                          cmp bl, 0x2 ; 
+    69 00000037 B732                            mov bh, ASCII_TECLA_2 ; 
+    70 00000039 745C                            jz GUARDADO_LETRA
+    71                                  
+    72                                        L_3:
+    73 0000003B 80FB03                          cmp bl, 0x3 ; 
+    74 0000003E B733                            mov bh, ASCII_TECLA_3
+    75 00000040 7455                            jz GUARDADO_LETRA   
+    76                                  
+    77                                        L_4:
+    78 00000042 80FB04                          cmp bl, 0x4
+    79 00000045 B734                            mov bh, ASCII_TECLA_4 ; 
+    80 00000047 744E                            jz GUARDADO_LETRA 
+    81                                  
+    82                                        L_5:
+    83 00000049 80FB05                          cmp bl, 0x5 ; 
+    84 0000004C B735                            mov bh, ASCII_TECLA_5
+    85 0000004E 7447                            jz GUARDADO_LETRA   
+    86                                  
+    87                                        L_6:
+    88 00000050 80FB06                          cmp bl, 0x6
+    89 00000053 B736                            mov bh, ASCII_TECLA_6 ; 
+    90 00000055 7440                            jz GUARDADO_LETRA   
+    91                                  
+    92                                        L_7:
+    93 00000057 80FB07                          cmp bl, 0x7 ; 
+    94 0000005A B737                            mov bh, ASCII_TECLA_7
+    95 0000005C 7439                            jz GUARDADO_LETRA     
+    96                                        
+    97                                        L_8:
+    98 0000005E 80FB08                          cmp bl, 0x8
+    99 00000061 B738                            mov bh, ASCII_TECLA_8 ; 
+   100 00000063 7432                            jz GUARDADO_LETRA
+   101                                        
+   102                                        L_9:
+   103 00000065 80FB09                          cmp bl, 0x9 
+   104 00000068 B739                            mov bh, ASCII_TECLA_9 
+   105 0000006A 742B                            jz GUARDADO_LETRA  
+   106                                        
+   107                                        L_A:
+   108 0000006C 80FB0A                          cmp bl, 0xA 
+   109 0000006F B741                            mov bh, ASCII_TECLA_A
+   110 00000071 7424                            jz GUARDADO_LETRA
+   111                                        
+   112                                        L_B:
+   113 00000073 80FB0B                          cmp bl, 0xB 
+   114 00000076 B742                            mov bh, ASCII_TECLA_B 
+   115 00000078 741D                            jz GUARDADO_LETRA  
+   116                                        
+   117                                        L_C:
+   118 0000007A 80FB0C                          cmp bl, 0xC ; 
+   119 0000007D B743                            mov bh, ASCII_TECLA_C
+   120 0000007F 7416                            jz GUARDADO_LETRA 
+   121                                        
+   122                                        L_D:
+   123 00000081 80FB0D                          cmp bl, 0xD 
+   124 00000084 B744                            mov bh, ASCII_TECLA_D
+   125 00000086 740F                            jz GUARDADO_LETRA 
+   126                                        
+   127                                        L_E:
+   128 00000088 80FB0E                          cmp bl, 0xE 
+   129 0000008B B745                            mov bh, ASCII_TECLA_E
+   130 0000008D 7408                            jz GUARDADO_LETRA 
+   131                                  
+   132                                        L_F:
+   133 0000008F 80FB0F                          cmp bl, 0xF 
+   134 00000092 B746                            mov bh, ASCII_TECLA_F
+   135 00000094 7401                            jz GUARDADO_LETRA 
+   136                                  
+   137 00000096 C3                            ret
+   138                                  
+   139                                        GUARDADO_LETRA:
+   140                                   
+   141                                     
+   142                                  
+   143                                  
+   144 00000097 6683FA01                      cmp dx,0x1
+   145 0000009B 7402                          jz AA
+   146 0000009D EB07                          jmp BB
+   147                                  
+   148                                  
+   149                                  
+   150                                        AA:
+   151 0000009F 83F910                        cmp ecx, 0x10
+   152 000000A2 7417                          jz MOSTRAR_NUMERO
+   153 000000A4 EB09                          jmp CC
+   154                                  
+   155                                        BB:
+   156 000000A6 83F908                        cmp ecx, 0x8
+   157 000000A9 0F8467FFFFFF                  jz PARTE_BAJA
+   158                                  
+   159                                        CC:
+   160 000000AF 88B9[00000000]                mov byte[_BUFFER_NUMERO_PANTALLA + ecx],bh
+   161 000000B5 41                            inc ecx
+   162 000000B6 E964FFFFFF                    jmp BUFFER 
+   163                                  
+   164                                        MOSTRAR_NUMERO:
+   165                                        
+   166 000000BB B900000000                    mov ecx, 0x0
+   167                                  
+   168 000000C0 C60550850B0030                mov byte[BUFFER_VIDEO + 0x50 + COLUMNAS], ASCII_TECLA_0
+   169 000000C7 C60551850B0007                mov byte[BUFFER_VIDEO + 0x50 + COLUMNAS + 0x01], 0x07
+   170 000000CE C60552850B0078                mov byte[BUFFER_VIDEO + 0x50 + COLUMNAS + 0x02], ASCII_TECLA_x
+   171 000000D5 C60553850B0007                mov byte[BUFFER_VIDEO + 0x50 + COLUMNAS + 0x03], 0x07
+   172                                        ;mov byte[BUFFER_VIDEO + 0x50 + COLUMNAS + 0x04], ASCII_TECLA_0
+   173                                        ;mov byte[BUFFER_VIDEO + 0x50 + COLUMNAS + 0x05], 0x07
+   174                                        ;mov byte[BUFFER_VIDEO + 0x50 + COLUMNAS + 0x06], ASCII_TECLA_0
+   175                                        ;mov byte[BUFFER_VIDEO + 0x50 + COLUMNAS + 0x07], 0x07
+   176                                        ;mov byte[BUFFER_VIDEO + 0x50 + COLUMNAS + 0x08], ASCII_TECLA_0
+   177                                        ;mov byte[BUFFER_VIDEO + 0x50 + COLUMNAS + 0x09], 0x07
+   178                                        ;mov byte[BUFFER_VIDEO + 0x50 + COLUMNAS + 0x0A], ASCII_TECLA_0
+   179                                        ;mov byte[BUFFER_VIDEO + 0x50 + COLUMNAS + 0x0B], 0x07
+   180                                        ;mov byte[BUFFER_VIDEO + 0x50 + COLUMNAS + 0x0C], ASCII_TECLA_0
+   181                                        ;mov byte[BUFFER_VIDEO + 0x50 + COLUMNAS + 0x0D], 0x07
+   182                                        ;mov byte[BUFFER_VIDEO + 0x50 + COLUMNAS + 0x0E], ASCII_TECLA_0
+   183                                        ;mov byte[BUFFER_VIDEO + 0x50 + COLUMNAS + 0x0F], 0x07
+   184                                        ;mov byte[BUFFER_VIDEO + 0x50 + COLUMNAS + 0x10], ASCII_TECLA_0
+   185                                        ;mov byte[BUFFER_VIDEO + 0x50 + COLUMNAS + 0x11], 0x07
+   186                                        ;mov byte[BUFFER_VIDEO + 0x50 + COLUMNAS + 0x12], ASCII_TECLA_0
+   187                                        ;mov byte[BUFFER_VIDEO + 0x50 + COLUMNAS + 0x13], 0x07
+   188                                  
+   189                                        NUMERO:
+   190 000000DC 8A81[00000000]                mov al , [_BUFFER_NUMERO_PANTALLA + ecx]  
+   191 000000E2 88840954850B00                mov byte[BUFFER_VIDEO + 0x50 + COLUMNAS + 0x04 +ecx*2], al  
+   192 000000E9 C6840955850B0007              mov byte[BUFFER_VIDEO + 0x50 + COLUMNAS + 0x04 + ecx *2+ 0x01], 0x07
+   193 000000F1 83F910                        cmp ecx,0x10
+   194 000000F4 7403                          jz FIN
+   195 000000F6 41                            inc ecx
+   196 000000F7 EBE3                          jmp NUMERO
+   197                                  
+   198                                        FIN:
+   199 000000F9 C3                            ret

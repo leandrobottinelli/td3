@@ -6,7 +6,7 @@ OUTPUT_NAME4 = rutinas
 OUTPUT_NAME5 = sys_tables
 OUTPUT_NAME6 = pic
 OUTPUT_NAME7 = pit
-OUTPUT_NAME8 = letras
+OUTPUT_NAME8 = pantalla_init
 OUTPUT_NAME9 = pantalla
 
 
@@ -43,7 +43,7 @@ all: clean crear_estructura
 	
 	$(LINKER) -z max-page-size=0x1000 -m elf_i386 -T sup/linker.lds  bin/$(OUTPUT_NAME).elf  bin/$(OUTPUT_NAME2).elf bin/$(OUTPUT_NAME3).elf bin/$(OUTPUT_NAME4).elf bin/$(OUTPUT_NAME5).elf bin/$(OUTPUT_NAME6).elf bin/$(OUTPUT_NAME7).elf bin/$(OUTPUT_NAME8).elf bin/$(OUTPUT_NAME9).elf  -o bin/rom.elf  -Map sup/$(OUTPUT_NAME).map
 
-	$(LINKER) -z max-page-size=0x1000 --oformat=binary -m elf_i386 -T sup/linker.lds  bin/$(OUTPUT_NAME).elf bin/$(OUTPUT_NAME2).elf bin/$(OUTPUT_NAME3).elf bin/$(OUTPUT_NAME4).elf  bin/$(OUTPUT_NAME5).elf bin/$(OUTPUT_NAME6).elf bin/$(OUTPUT_NAME7).elf bin/$(OUTPUT_NAME).elf  bin/$(OUTPUT_NAME9).elf  -o bin/rom.bin
+	$(LINKER) -z max-page-size=0x1000 --oformat=binary -m elf_i386 -T sup/linker.lds  bin/$(OUTPUT_NAME).elf bin/$(OUTPUT_NAME2).elf bin/$(OUTPUT_NAME3).elf bin/$(OUTPUT_NAME4).elf  bin/$(OUTPUT_NAME5).elf bin/$(OUTPUT_NAME6).elf bin/$(OUTPUT_NAME7).elf bin/$(OUTPUT_NAME8).elf  bin/$(OUTPUT_NAME9).elf  -o bin/rom.bin
 
 
 bochs:
