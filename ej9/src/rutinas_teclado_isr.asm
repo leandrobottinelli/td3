@@ -27,7 +27,7 @@ GLOBAL LECTURA_TECLA
 EXTERN FIN
 EXTERN __INICIO_RAM_TECLADO_RUTINA
 EXTERN _flag_int_teclado
-EXTERN _CONTADOR_TIMER
+EXTERN _flag_int_timer
 
 
 %define _PUERTO_TECLADO  0x64;
@@ -166,16 +166,15 @@ isr19_handler_XF:
    jmp default_isr
 
 
+
 isr32_handler_PIT:
    pushad
-   mov eax, [_CONTADOR_TIMER]
-   inc eax
-   mov [_CONTADOR_TIMER], eax
+   mov eax, 0x01
+   mov [_flag_int_timer], eax
    mov al,0x20                ;Codigo para avisar al PIC que atendi la int 
    out 0x20,al
    popad
    iret
-
 isr33_handler_KEYBOARD:
 
    pushad

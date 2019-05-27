@@ -9,7 +9,7 @@
 
   ; Si el flag fue de timer:
   ; Incremento el CONTADOR_TIMER cada vez que se activa el flag (10 ms)
-  ; Cuando llego a las 10 veces, Incremento _CONTADOR_TIMER_2 
+  ; Cuando llego a las 10 veces, Incremento _CONTADOR_TIMER_2  y muestro por pantalla el numero
   ; Logro contar cuantas veces paso 100 ms
 
   ; Si el flag fue de teclado:
@@ -117,8 +117,6 @@ EXTERN BUFFER_DOBLE_OFFS
 %define TECLA_E  0x12
 %define TECLA_F  0x21
 %define TECLA_ENTER  0x1C
-
-
 
 
 %define BKP xchg bx,bx
@@ -298,7 +296,9 @@ WHILE:
     mov [_CONTADOR_TIMER], ax
     mov eax,[_CONTADOR_TIMER_2]
     inc eax
-    
+
+    call MOSTRAR_PANTALLA
+
     mov [_CONTADOR_TIMER_2], eax
     JMP WHILE
 
@@ -430,8 +430,7 @@ WHILE:
       call CARGAR_TABLA_2
       mov [_NUMERO_TOTAL], eax
       call SUMA_TABLA_DIGITOS
-      ;BKP
-      call MOSTRAR_PANTALLA
+      ;call MOSTRAR_PANTALLA
       ;BKP
 
       RESET:
