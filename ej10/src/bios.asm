@@ -188,7 +188,8 @@ modo_proteg:
 ;| .datos         0x004E0000  - 0x000000058 ---> 1  PAG  ---> DIR 001  ---> TAB 0E0         | 
 ;| .rutinas       0x00F00000  - 0x0000001f4 ---> 1  PAG  ---> DIR 003  ---> TAB 300         |
 ;|  pila          0x1FFFB000  - 0x000003000 ---> 3  PAG  ---> DIR 07F  ---> TAB 3FB - 3FD   |
-;| .rom           0xFFFF0000  - 0x000002000 ---> 2  PAG  ---> DIR 3FF  ---> TAB 3F0 - 3F2   |                                                        |
+;| .rom           0xFFFF0000  - 0x000002000 ---> 2  PAG  ---> DIR 3FF  ---> TAB 3F0 - 3F2   |
+;| BUFFER_VIDEO   0x000b8000  - 0x000001000 ---> 1  PAG  ---> DIR 000  ---> TAB 0B8                                                    |
 ;+------------------------------------------------------------------------------------------+
 
 
@@ -238,6 +239,7 @@ modo_proteg:
    mov dword [__INICIO_RAM_PAGE_TABLES + 0x1000 + 0x000 * 4], 0x00000000 + 0x3    ; DIR 000 TAB 000 Pagina ISR 
    mov dword [__INICIO_RAM_PAGE_TABLES + 0x1000 + 0x100 * 4], 0x00100000 + 0x3    ; DIR 000 TAB 001 Pagina sys_tables
    mov dword [__INICIO_RAM_PAGE_TABLES + 0x1000 + 0x110 * 4], 0x00110000 + 0x3    ; DIR 000 TAB 001 Pagina sys_tables
+   mov dword [__INICIO_RAM_PAGE_TABLES + 0x1000 + 0x0B8 * 4], 0x000b8000 + 0x3    ; DIR 000 TAB 0B8 Pagina video
 
 
 
