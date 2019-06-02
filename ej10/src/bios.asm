@@ -95,13 +95,14 @@ GLOBAL cs_sel
 GLOBAL ds_sel
 GLOBAL _flag_int_teclado
 GLOBAL _flag_16_TECLAS
-
+GLOBAL _FALLO_PAGINA_NUMERO
 
 EXTERN _pic_configure
 EXTERN _pit_configure
 EXTERN _bios_init
 EXTERN MOSTRAR_PANTALLA
 EXTERN BUFFER_DOBLE_OFFS
+EXTERN PAGINACION_INIT
 ;----------------------------------------------------------------------------------
 %define TECLA_0  0x0B
 %define TECLA_1  0x02
@@ -172,102 +173,13 @@ INICIO_TABLA_PAGES     EQU INICIO_DIR_PAGES + 0x1000
 USE32
 modo_proteg:
 
-;PAGINACION
-;--------------------------------------------------------------------------------------------------------------------
 
-
-;+------------------------------------------------------------------------------------------+
-;| Direcciones a paginar        Longitud                                                    |
-;|------------------------------------------------------------------------------------------+
-;| .ISR0          0x00000000  - 0x0000000c5 ---> 1  PAG  ---> DIR 000  ---> TAB 000         |
-;| .sys_tables    0x00100000  - 0x000000134 ---> 1  PAG  ---> DIR 000  ---> TAB 100         | 
-;| .page_tables   0x00110000  - 0x000001000 ---> 1  PAG  ---> DIR 000  ---> TAB 110                                                               |
-;| .tabla_digitos 0x00310000  - 0x000010000 ---> 16 PAG  ---> DIR 000  ---> TAB 310 - 320   |
-;| .nucleo        0x00400000  - 0x000000189 ---> 1  PAG  ---> DIR 001  ---> TAB 000         | 
-;| .text_tarea_1  0x00420000  - 0x00000003e ---> 1  PAG  ---> DIR 001  ---> TAB 020         | 
-;| .datos         0x004E0000  - 0x000000058 ---> 1  PAG  ---> DIR 001  ---> TAB 0E0         | 
-;| .rutinas       0x00F00000  - 0x0000001f4 ---> 1  PAG  ---> DIR 003  ---> TAB 300         |
-;|  pila          0x1FFFB000  - 0x000003000 ---> 3  PAG  ---> DIR 07F  ---> TAB 3FB - 3FD   |
-;| .rom           0xFFFF0000  - 0x000002000 ---> 2  PAG  ---> DIR 3FF  ---> TAB 3F0 - 3F2   |
-;| BUFFER_VIDEO   0x000b8000  - 0x000001000 ---> 1  PAG  ---> DIR 000  ---> TAB 0B8                                                    |
-;+------------------------------------------------------------------------------------------+
-
-
-  mov edi,__INICIO_RAM_PAGE_TABLES ;Apuntar al inicio de la 1ra tabla.
-  mov ecx,0x4000/4                 ;Cantidad de entradas del directorio y tabla
-  xor eax,eax                      ;Poner a cero esas entradas.
-  ;rep stosd
   mov ax,ds_sel
   mov ds,ax
   mov ss,ax
   mov esp,__FIN_PILA
 
 
-
-
-  ; Inicio Directorios de Paginas
-   mov dword [__INICIO_RAM_PAGE_TABLES + 0x000 * 4], __INICIO_RAM_PAGE_TABLES + 0x001000 + 0x00 + 0x3 
-   mov dword [__INICIO_RAM_PAGE_TABLES + 0x001 * 4], __INICIO_RAM_PAGE_TABLES + 0x002000 + 0x00 + 0x3 
-   mov dword [__INICIO_RAM_PAGE_TABLES + 0x003 * 4], __INICIO_RAM_PAGE_TABLES + 0x004000 + 0x00 + 0x3
-   mov dword [__INICIO_RAM_PAGE_TABLES + 0x07F * 4], __INICIO_RAM_PAGE_TABLES + 0x005000 + 0x00 + 0x3
-
-   mov dword [__INICIO_RAM_PAGE_TABLES + 0x3FF * 4], __INICIO_RAM_PAGE_TABLES + 0x400000 + 0x00 + 0x3
-
-
-  ;Inicio Tabla ROM
-   mov dword [__INICIO_RAM_PAGE_TABLES + 0x400000  + 0x3F0 * 4], 0xFFFF0000 + 0x3 ;
-   mov dword [__INICIO_RAM_PAGE_TABLES + 0x400000  + 0x3F1 * 4], 0xFFFF1000 + 0x3 ;
-   mov dword [__INICIO_RAM_PAGE_TABLES + 0x400000  + 0x3F2 * 4], 0xFFFF2000 + 0x3 ;
-
-
-  ; Inicio Tabla Stack
-   mov dword [__INICIO_RAM_PAGE_TABLES + 0x005000  + 0x3FB * 4], 0x1FFFB000 + 0x3 ;
-   mov dword [__INICIO_RAM_PAGE_TABLES + 0x005000  + 0x3FC * 4], 0x1FFFC000 + 0x3 ;
-   mov dword [__INICIO_RAM_PAGE_TABLES + 0x005000  + 0x3FD * 4], 0x1FFFD000 + 0x3 ;
-   mov dword [__INICIO_RAM_PAGE_TABLES + 0x005000  + 0x3FE * 4], 0x1FFFE000 + 0x3 ;
-                                                                               
-  ; Inicio Tabla 3 de Paginas 
-   mov dword [__INICIO_RAM_PAGE_TABLES + 0x004000  + 0x300 * 4], 0x00F00000 + 0x3 ;
-
-
-  ; Inicio Tabla 1 de Paginas 
-   mov dword [__INICIO_RAM_PAGE_TABLES + 0x2000 + 0x000 * 4], 0x00400000 + 0x3 ;
-   mov dword [__INICIO_RAM_PAGE_TABLES + 0x2000 + 0x020 * 4], 0x00420000 + 0x3 ;
-   mov dword [__INICIO_RAM_PAGE_TABLES + 0x2000 + 0x0E0 * 4], 0x004E0000 + 0x3 ;
-
-  ; Inicio Tabla 0 de Paginas 
-   mov dword [__INICIO_RAM_PAGE_TABLES + 0x1000 + 0x000 * 4], 0x00000000 + 0x3    ; DIR 000 TAB 000 Pagina ISR 
-   mov dword [__INICIO_RAM_PAGE_TABLES + 0x1000 + 0x100 * 4], 0x00100000 + 0x3    ; DIR 000 TAB 001 Pagina sys_tables
-   mov dword [__INICIO_RAM_PAGE_TABLES + 0x1000 + 0x110 * 4], 0x00110000 + 0x3    ; DIR 000 TAB 001 Pagina sys_tables
-   mov dword [__INICIO_RAM_PAGE_TABLES + 0x1000 + 0x0B8 * 4], 0x000b8000 + 0x3    ; DIR 000 TAB 0B8 Pagina video
-
-
-
-   mov dword [__INICIO_RAM_PAGE_TABLES + 0x1000 + 0x310 * 4], 0x00310000 + 0x3
-   mov dword [__INICIO_RAM_PAGE_TABLES + 0x1000 + 0x311 * 4], 0x00311000 + 0x3
-   mov dword [__INICIO_RAM_PAGE_TABLES + 0x1000 + 0x312 * 4], 0x00312000 + 0x3
-   mov dword [__INICIO_RAM_PAGE_TABLES + 0x1000 + 0x313 * 4], 0x00313000 + 0x3
-   mov dword [__INICIO_RAM_PAGE_TABLES + 0x1000 + 0x314 * 4], 0x00314000 + 0x3
-   mov dword [__INICIO_RAM_PAGE_TABLES + 0x1000 + 0x315 * 4], 0x00315000 + 0x3
-   mov dword [__INICIO_RAM_PAGE_TABLES + 0x1000 + 0x316 * 4], 0x00316000 + 0x3     ; DIR 000   TAB 010 - 01F
-   mov dword [__INICIO_RAM_PAGE_TABLES + 0x1000 + 0x317 * 4], 0x00317000 + 0x3     ; PAGINAS TABLA DE DIGITOS
-   mov dword [__INICIO_RAM_PAGE_TABLES + 0x1000 + 0x318 * 4], 0x00318000 + 0x3
-   mov dword [__INICIO_RAM_PAGE_TABLES + 0x1000 + 0x319 * 4], 0x00319000 + 0x3
-   mov dword [__INICIO_RAM_PAGE_TABLES + 0x1000 + 0x31A * 4], 0x0031A000 + 0x3
-   mov dword [__INICIO_RAM_PAGE_TABLES + 0x1000 + 0x31B * 4], 0x0031B000 + 0x3
-   mov dword [__INICIO_RAM_PAGE_TABLES + 0x1000 + 0x31C * 4], 0x0031C000 + 0x3
-   mov dword [__INICIO_RAM_PAGE_TABLES + 0x1000 + 0x31D * 4], 0x0031D000 + 0x3
-   mov dword [__INICIO_RAM_PAGE_TABLES + 0x1000 + 0x31E * 4], 0x0031E000 + 0x3
-   mov dword [__INICIO_RAM_PAGE_TABLES + 0x1000 + 0x31F * 4], 0x0031F000 + 0x3
-
-
-
-  mov eax,__INICIO_RAM_PAGE_TABLES
-  mov cr3,eax                        ;Apuntar a directorio de paginas.
-  mov eax,cr0                        ;Activar paginacion encendiendo el
-  or eax,0x80000000                  ;bit 31 de CR0.
-  mov cr0,eax
-  mov esp,__FIN_PILA
 
 ;--------------------------------------------------------------------------------------------------------------------
 
@@ -306,6 +218,20 @@ section .nucleo
 
 
 nucleos:   
+  
+;BKP
+
+  call PAGINACION_INIT
+
+
+
+ xchg bx, bx
+
+  mov eax,__INICIO_RAM_PAGE_TABLES
+  mov cr3,eax                        ;Apuntar a directorio de paginas.
+  mov eax,cr0                        ;Activar paginacion encendiendo el
+  or eax,0x80000000                  ;bit 31 de CR0.
+  mov cr0,eax
 
   push __INICIO_ROM_ISR
   push __INICIO_RAM_ISR
@@ -318,7 +244,7 @@ nucleos:
   pop eax
 
 
-
+;BKP
 
   push __INICIO_ROM_SYS_TABLES
   push __INICIO_RAM_SYS_TABLES
@@ -330,6 +256,8 @@ nucleos:
   pop eax
   pop eax
 
+
+;BKP
   push __INICIO_ROM_TEXT_TAREA_1
   push __INICIO_RAM_TEXT_TAREA_1
   push __LONGITUD_TEXT_TAREA_1
@@ -352,6 +280,9 @@ nucleos:
   pop eax
   pop eax
 
+;BKP
+
+
 lgdt [cs:img_gdtr_32] 
 
 lidt [img_idtr]   
@@ -360,7 +291,7 @@ call _pic_configure
 call _pit_configure
 
 sti
-;xchg bx, bx
+xchg bx, bx
 
 
 WHILE:
@@ -392,12 +323,21 @@ WHILE:
 
     mov ax, 0x0
     mov [_CONTADOR_TIMER], ax
+    
     mov eax,[_CONTADOR_TIMER_2]
     inc eax
-
-    call MOSTRAR_PANTALLA
-
     mov [_CONTADOR_TIMER_2], eax
+
+    push 0x20               ; Guardo el valor de COLUMNAS  
+    push 0x500              ; Guardo el valor de FILAS
+    push _NUMERO_TOTAL
+    call MOSTRAR_PANTALLA
+    pop eax
+    pop eax
+    pop eax
+
+    ;call 0x0c1111   ; Permite generar un #PF
+    
     JMP WHILE
 
 
@@ -543,7 +483,7 @@ jmp WHILE
 
 
 ;----------------------------------------------------------------------
-section .datos
+section .datos 
 
 _CONTADOR_TECLAS: resq 1        ;Contador de teclas validas presionadas
 _CONTADOR_TECLAS_BYTES: resq 1  ;Contador para tomar de a dos hexas, y ponerlos en un byte
@@ -554,5 +494,6 @@ _flag_int_timer: resq 1
 _CONTADOR_TIMER: resq 1        ;Contador de interrupciones del PIT cada 10ms
 _CONTADOR_TIMER_2: resq 1      ;Contador de interrupciones del PIT cada 100ms
 _NUMERO_TOTAL : resq 2
+_FALLO_PAGINA_NUMERO: resq 1
 _BUFFER_NUMERO_PANTALLA: resq 1
 

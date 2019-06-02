@@ -28,13 +28,14 @@ EXTERN FIN
 EXTERN __INICIO_RAM_TECLADO_RUTINA
 EXTERN _flag_int_teclado
 EXTERN _flag_int_timer
-
+EXTERN MOSTRAR_PANTALLA
+EXTERN _FALLO_PAGINA_NUMERO
 
 %define _PUERTO_TECLADO  0x64;
 %define _PUERTO_TECLADO_CODIGO 0x60;
 ;-------------------------------------------------------------------------------
 
-section .rutina_teclado_isr
+section .rutina_lectura_teclado
 USE32
 
 POLLING:
@@ -64,8 +65,12 @@ ret
 ;ret
 
 
-;---------------------------------------------------------------------
-; Handlers ISRs
+;///////////////////////////////////////////////////////////////////////////////////////////////////////////////////;///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+;///////////////////////////////////////////////////////////////////////////////////////////////////////////////////;///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+;///////////////////////////////////////////////////////////////////////////////////////////////////////////////////;///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+section .rutinas_isr
+USE32
 
 default_isr:
    nop
@@ -139,9 +144,22 @@ isr13_handler_GP:
 
 
 isr14_handler_PF:
-   mov edx, 14
    xchg bx ,bx
-   jmp default_isr
+   pushad
+   mov edx, 14
+   mov eax,cr2                    ; Guardo el numero de la pagina que fallo
+   mov [_FALLO_PAGINA_NUMERO],eax ; Guardo el numero de la pagina que fallo en memoria para mostrarlo en pantalla
+
+   push 0x60                      ; Guardo el valor de COLUMNAS  
+   push 0x500                     ; Guardo el valor de FILAS
+   push _FALLO_PAGINA_NUMERO      ; Guardo el numero de la pagina que fallo
+   call MOSTRAR_PANTALLA           
+   pop eax
+   pop eax
+   pop eax
+
+   popad
+   iret
 
 isr15_handler:
    mov edx, 15

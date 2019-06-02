@@ -57,6 +57,9 @@ __SIZE_PILA_TAREA_1   = 0x3000;
 __FIN_PILA_TAREA_1    = __INICIO_PILA_TAREA_1 + __SIZE_PILA_TAREA_1;
 
 
+__LONGITUD_TABLA_DIGITOS = 0x10000;
+_BUFFER_VIDEO = 0xB8000;
+
 MEMORY
 {
 	ram (rwx) : ORIGIN = 0x00000000, LENGTH = 0xFFFF0000
@@ -76,7 +79,8 @@ SECTIONS
 	.ISR 0x00000000 :
 	{ __INICIO_RAM_ISR  = .;
 	  __INICIO_ROM_ISR  = LOADADDR(.ISR);
-	  *(.rutina_teclado_isr);} AT >rom_init
+	  *(.rutinas_isr);
+	  *(.rutina_lectura_teclado);} AT >rom_init
 	  __LONGITUD_ISR = SIZEOF(.ISR);
 
 

@@ -10,7 +10,7 @@ COPY_INIT:
     mov ebp, esp  
     mov ecx,[ebp + 4]        ; Tomo los siguientes 3 datos de la pila
     mov edi,[ebp + 8]          
-    mov esi,[ebp + 12]         
+    mov esi,[ebp + 12]
 
 COPY_CICLO:
     

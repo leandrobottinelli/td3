@@ -2,13 +2,14 @@
 GLOBAL MOSTRAR_PANTALLA
 EXTERN _NUMERO_TOTAL
 EXTERN _BUFFER_NUMERO_PANTALLA
+EXTERN _BUFFER_VIDEO
+
 
 section .rutinas
 USE32
 
-%define BUFFER_VIDEO  0xb8000
-%define FILAS         0x50
-%define COLUMNAS      0x500
+;%define FILAS         0x50
+;%define COLUMNAS      0x500
 
 %define ASCII_TECLA_A 0x41
 %define ASCII_TECLA_B 0x42
@@ -36,13 +37,19 @@ USE32
       mov edx, 0x0
       mov ebx, 0x0
 
+
+      mov ebp, esp  
+
       PARTE_ALTA:
-      mov eax, [_NUMERO_TOTAL + 0x4]    ; Cargo los 8 digitos mas significativos
+
+      mov eax,[ebp + 4]      ; Cargo direccion de __NUMERO_TOTAL
+      mov eax, [eax + 0x4]   ; Cargo los 8 digitos mas significativos [_NUMERO_TOTAL + 0x4]   
       jmp BUFFER
 
       PARTE_BAJA:
-      mov eax, [_NUMERO_TOTAL]          ; Cargo los 8 digitos menos significativos
-      mov dx, 0x01                      ; Flag para contar las primeras 8 teclas
+      mov eax,[ebp + 4]      ; Cargo direccion de __NUMERO_TOTAL
+      mov eax, [eax]         ; Cargo los 8 digitos menos significativos [_NUMERO_TOTAL] 
+      mov dx, 0x01           ; Flag para contar las primeras 8 teclas
 
 
       BUFFER:
@@ -157,18 +164,22 @@ USE32
       MOSTRAR_NUMERO:
       
       mov ecx, 0x0
+      mov eax,[ebp + 8]     ; Guardo el valor de FILAS 
+      mov ebx,[ebp + 12]    ; Guardo el valor de COLUMNAS 
 
-      mov byte[BUFFER_VIDEO + COLUMNAS + FILAS], ASCII_TECLA_0
-      mov byte[BUFFER_VIDEO + COLUMNAS + FILAS + 0x01], 0x07  
-      mov byte[BUFFER_VIDEO + COLUMNAS + FILAS + 0x02], ASCII_TECLA_x
-      mov byte[BUFFER_VIDEO + COLUMNAS + FILAS + 0x03], 0x07
+      add eax, ebx          ; Guardo el valor de FILAS + COLUMNAS para usarlo en el buffer
+
+      mov byte[_BUFFER_VIDEO + eax ], ASCII_TECLA_0
+      mov byte[_BUFFER_VIDEO + eax + 0x01], 0x07  
+      mov byte[_BUFFER_VIDEO + eax + 0x02], ASCII_TECLA_x
+      mov byte[_BUFFER_VIDEO + eax + 0x03], 0x07
 
 
       NUMERO:
-      mov al , [_BUFFER_NUMERO_PANTALLA + ecx]                              ; Offset de columnas y filas arbitrario
-      mov byte[BUFFER_VIDEO + COLUMNAS + FILAS + 0x04 +ecx*2], al           ; Guardo cada letra en el buffer de salida
-      mov byte[BUFFER_VIDEO + COLUMNAS + FILAS + 0x04 + ecx *2+ 0x01], 0x07 ; Guardo el color de la letra y fondo despues de cada letra
-      cmp ecx,0x10                                                          ; Cuento hasta 16 digitos y retorno
+      mov bl , [_BUFFER_NUMERO_PANTALLA + ecx]                  ; Offset de columnas y filas arbitrario
+      mov byte[_BUFFER_VIDEO + eax + 0x04 +ecx*2], bl           ; Guardo cada letra en el buffer de salida
+      mov byte[_BUFFER_VIDEO + eax + 0x04 + ecx *2+ 0x01], 0x07 ; Guardo el color de la letra y fondo despues de cada letra
+      cmp ecx,0x10                                              ; Cuento hasta 16 digitos y retorno
       jz FIN
       inc ecx
       jmp NUMERO
