@@ -69,7 +69,7 @@ EXTERN _pit_configure
 %define TECLA_Y  0x15
 %define TECLA_U  0x16
 %define TECLA_I  0x17
-%define TECLA_O  0x1c
+%define TECLA_O  0x18
 
 
 ;----------------------------------------------------------------------------------
@@ -216,23 +216,24 @@ WHILE:
       sti
 
   UD:
-      cmp al, TECLA_U ; Excepcion UD (Undefined Opcode)
-       
+      cmp al, TECLA_U     ; Excepcion UD (Undefined Opcode)
       jnz DE
+      mov byte[UD], 0xFF  ; Modifico el codigo de instruccion del compare
+      jmp UD              ; Salto para ejecutarlo
 
   DE:
-      cmp al, TECLA_Y ; Excepcion DE (Divide Error) 
+      cmp al, TECLA_Y     ; Excepcion DE (Divide Error) 
       jnz DF
       mov eax, 0x10
       mov ecx, 0x00
       div ecx
 
   DF:
-      cmp al, TECLA_I ; Excepcion DF (Double Fault) 
+      cmp al, TECLA_I     ; Excepcion DF (Double Fault)
       jnz GP
 
   GP:
-      cmp al, TECLA_O ; Excepcion GP (General Protection) 
+      cmp al, TECLA_O     ; Excepcion GP (General Protection) 
       jnz SHUTDOWN
       mov ax, 0xFFFF
       mov ss, ax
@@ -248,7 +249,7 @@ jmp WHILE
 
 FIN:
 nop 
-hlt               ; Se presiono tecla "s", hago halt de todo
+hlt                       ; Se presiono tecla "s", hago halt de todo
 jmp FIN
 
 

@@ -52,8 +52,8 @@ jnc POLLING
 LECTURA_TECLA:
 
 in al, _PUERTO_TECLADO_CODIGO
-bt ax, 0x7                       ;Me fijo si la tecla fue presionada o soltada
-jc POLLING                       ;Me quedo solo con la tecla persionada
+bt ax, 0x7                             ; Me fijo si la tecla fue presionada o soltada
+jc POLLING                             ; Me quedo solo con la tecla persionada
 
 ;xchg bx,bx
 ret
@@ -174,16 +174,19 @@ isr14_handler_PF:
    invlpg [eax]                   ; Invalido la pagina que fallo antes de regresar
 
 
-   mov ebx, __DIR_FISICA_PAGINAS_NO_PRESENTES      
-   add ebx, dword[ _CONTADOR_PAGINAS_NO_PRESENTES] 
+   mov ebx, __DIR_FISICA_PAGINAS_NO_PRESENTES ; Cargo la direccion donde voy a paginar las paginas no paginadas
+   mov ecx,[ _CONTADOR_PAGINAS_NO_PRESENTES]  ; Cargo valor del contador de las paginas no presentes, ya paginadas anteriormente 
+   shl ecx, 12                                ; Multiplico por 0x1000 el contador 
+   add ebx, ecx                               ; A la direccion fisica de base, le agrego un multiplo de 0x1000
+                                              ; para la nueva direccion fisica, de la pagina no presente a paginar
 
 
    push  __INICIO_RAM_PAGE_TABLES
    push  0x03
    push  0x03
    push  0x1000
-   push  ebx                     ; Direccion fisca que propone la guia a partir de 0x08000000 
-   push  eax                     ; Direccion lineal que fallo y quiero paginar
+   push  ebx                                  ; Direccion fisca que propone la guia a partir de 0x08000000 
+   push  eax                                  ; Direccion lineal que fallo y quiero paginar
 
    call PAGINACION
 
@@ -194,13 +197,15 @@ isr14_handler_PF:
    pop eax
    pop eax
 
-   add dword[ _CONTADOR_PAGINAS_NO_PRESENTES], 0x1000  ; Agrego 0x1000 en el contador, para que las paginas queden cada 0x1000
+   inc dword[ _CONTADOR_PAGINAS_NO_PRESENTES] ; Incremento contador para que las paginas queden cada 0x1000
 
    PRESENTE:
    popad
    
-   add esp, 4                    ; Sacar codigo de excepccion de la pila 
+   add esp, 4                                 ; Sacar codigo de excepccion de la pila 
    iret
+
+
 
 isr15_handler:
    mov edx, 15
@@ -231,7 +236,7 @@ isr32_handler_PIT:
    pushad
    mov eax, 0x01
    mov [_flag_int_timer], eax
-   mov al,0x20                ;Codigo para avisar al PIC que atendi la int 
+   mov al,0x20                                     ; Codigo para avisar al PIC que atendi la int 
    out 0x20,al
    popad
    iret
@@ -239,8 +244,8 @@ isr33_handler_KEYBOARD:
 
    pushad
    mov ax, 0x1
-   mov [_flag_int_teclado],ax ;Flag para saber que interrumpio el teclado
-   mov al,0x20                ;Codigo para avisar al PIC que atendi la int 
+   mov [_flag_int_teclado],ax                      ; Flag para saber que interrumpio el teclado
+   mov al,0x20                                     ; Codigo para avisar al PIC que atendi la int 
    out 0x20,al
    popad
    iret

@@ -496,16 +496,16 @@ _ENTRADA_TABLA: dq __INICIO_RAM_TABLA_DIGITOS + 0x10 ; Puntero a la primera entr
 
 section .bss nobits
 
-_CONTADOR_TECLAS: resq 1        ; Contador de teclas validas presionadas
-_CONTADOR_TECLAS_BYTES: resq 1  ; Contador para tomar de a dos hexas, y ponerlos en un byte
-_flag_int_teclado: resq 1       ; Flag si interrupio el teclado
-_flag_16_TECLAS: resq 1         ; Flag si se presionaron mas de 16 teclas
-_flag_int_timer: resq 1
-_CONTADOR_TIMER: resq 1         ; Contador de interrupciones del PIT cada 10ms
-_CONTADOR_TIMER_2: resq 1       ; Contador de interrupciones del PIT cada 100ms
-_NUMERO_TOTAL : resq 2          ; Suma total de los numeros cargados en la TABLA_DIGITOS
-_FALLO_PAGINA_NUMERO: resq 1    ; Direccion de la pagina que falla CR2
-_CONTADOR_PAGINAS_NO_PRESENTES: resq 1
-_CONTADOR_TABLAS_PAGINAS: resq 1
-_BUFFER_NUMERO_PANTALLA: resq 1 ; Numero en ascii a cargar en la seccion de VIDEO
+_CONTADOR_TECLAS: resq 1         ; Contador de teclas validas presionadas
+_CONTADOR_TECLAS_BYTES: resq 1   ; Contador para tomar de a dos hexas, y ponerlos en un byte
+_flag_int_teclado: resq 1        ; Flag si interrumpio el teclado
+_flag_16_TECLAS: resq 1          ; Flag si se presionaron mas de 16 teclas
+_flag_int_timer: resq 1		     ; Flag si interrumpio el timer
+_CONTADOR_TIMER: resq 1          ; Contador de interrupciones del PIT cada 10ms
+_CONTADOR_TIMER_2: resq 1        ; Contador de interrupciones del PIT cada 100ms
+_NUMERO_TOTAL : resq 2           ; Suma total de los numeros cargados en la TABLA_DIGITOS
+_FALLO_PAGINA_NUMERO: resq 1     ; Direccion de la pagina que falla CR2
+_CONTADOR_PAGINAS_NO_PRESENTES: resq 1 ; Contador de paginas no presentes que ya fueron paginadas
+_CONTADOR_TABLAS_PAGINAS: resq 1 ; Contardor de cantidad de tablas de paginas ya creadas
+_BUFFER_NUMERO_PANTALLA: resq 1  ; Numero en ascii a cargar en la seccion de VIDEO
 

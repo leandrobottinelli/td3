@@ -330,7 +330,7 @@ mov esi,[ebp + 4]        ; Cargo la direccion lineal nuevamente
 shr esi, 12              ; Obtengo entrada de tabla de pagina
 and esi, 0x3FF
 
-sub ebx,edx              ; Resto los ATRIBUTOS_DIRECTORIO para poder cargarle los de TABLA luego
+and ebx, 0xFFFFF000      ; Resto los ATRIBUTOS_DIRECTORIO para poder cargarle los de TABLA luego
 
 
 

@@ -151,7 +151,7 @@ Guión del enlazador y mapa de memoria
                 0x00000000004f0050                _BUFFER_NUMERO_PANTALLA
                 0x0000000000000058                __LONGITUD_BSS = SIZEOF (.bss)
 
-.rutinas        0x0000000000f00000      0x43b dirección de carga 0x00000000ffff1834
+.rutinas        0x0000000000f00000      0x43f dirección de carga 0x00000000ffff1834
                 0x0000000000f00000                __INICIO_RAM_RUTINAS = .
                 0x00000000ffff1834                __INICIO_ROM_RUTINAS = LOADADDR (.rutinas)
  bin/copy.elf(.copy)
@@ -164,9 +164,9 @@ Guión del enlazador y mapa de memoria
                 0x0000000000f00045                CARGAR_TABLA_2
  .rutinas       0x0000000000f000fc      0x105 bin/pantalla.elf
                 0x0000000000f000fc                MOSTRAR_PANTALLA
- .rutinas       0x0000000000f00201      0x23a bin/page.elf
+ .rutinas       0x0000000000f00201      0x23e bin/page.elf
                 0x0000000000f00201                PAGINACION_INIT
-                0x000000000000043b                __LONGITUD_RUTINAS = SIZEOF (.rutinas)
+                0x000000000000043f                __LONGITUD_RUTINAS = SIZEOF (.rutinas)
 
 .reset          0x00000000fffffff0       0x10
  *(.reset)

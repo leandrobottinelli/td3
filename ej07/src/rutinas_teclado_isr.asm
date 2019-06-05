@@ -74,6 +74,7 @@ default_isr:
 
 isr0_handler_DE:
    mov edx, 0
+   xchg bx,bx
    jmp default_isr
 
 
@@ -99,6 +100,7 @@ isr5_handler_BR:
 
 isr6_handler_UD:
    mov edx, 6
+   xchg bx,bx
    jmp default_isr
 
 
@@ -109,6 +111,7 @@ isr7_handler_NM:
 
 isr8_handler_DF:
    mov edx, 8
+   xchg bx,bx
    jmp default_isr
 
 isr9_handler:
@@ -133,6 +136,7 @@ isr12_handler_SS:
 
 isr13_handler_GP:
    mov edx, 13
+   xchg bx,bx
    jmp default_isr
 
 
