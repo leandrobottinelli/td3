@@ -69,7 +69,7 @@ EXTERN _pit_configure
 %define TECLA_Y  0x15
 %define TECLA_U  0x16
 %define TECLA_I  0x17
-%define TECLA_O  0x18
+%define TECLA_O  0x1c
 
 
 ;----------------------------------------------------------------------------------
@@ -105,10 +105,10 @@ img_gdtr:
 
 
 inicio:
-  cli       ;Deshabilito interrupciones
-  db 0x66            ;Requerido para direcciones mayores
-  lgdt [cs:img_gdtr] ;que 0x00FFFFFFF. 
-  mov eax,cr0        ;Habiltación bit de modo protegido. 
+  cli       		 ; Deshabilito interrupciones
+  db 0x66            ; Requerido para direcciones mayores
+  lgdt [cs:img_gdtr] ; que 0x00FFFFFFF. 
+  mov eax,cr0        ; Habiltación bit de modo protegido. 
   or eax,1
   mov cr0,eax
  	
@@ -143,8 +143,8 @@ modo_proteg:
   push __LONGITUD_ROM
 
 
-  call COPY_INIT            ;Copio toda la ROM en RAM desde
-  pop eax                   ;funcion copy en RAM
+  call COPY_INIT            ; Copio parte de la ROM en RAM desde
+  pop eax                   ; funcion copy en RAM
   pop eax
   pop eax
 
@@ -216,7 +216,8 @@ WHILE:
       sti
 
   UD:
-      cmp al, TECLA_U ; Excepcion UD (Undefined Opcode) 
+      cmp al, TECLA_U ; Excepcion UD (Undefined Opcode)
+       
       jnz DE
 
   DE:

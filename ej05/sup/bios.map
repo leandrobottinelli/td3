@@ -16,19 +16,19 @@ Guión del enlazador y mapa de memoria
 .iplt           0x0000000000000000        0x0
  .iplt          0x0000000000000000        0x0 bin/copy.elf
 
-.init           0x00000000ffff0000       0x7d
+.init           0x00000000ffff0000       0x80
  *(.init)
- .init          0x00000000ffff0000       0x7d bin/bios.elf
+ .init          0x00000000ffff0000       0x80 bin/bios.elf
 
-.rutinas        0x0000000000000000       0x18 dirección de carga 0x00000000ffff007d
+.rutinas        0x0000000000000000       0x15 dirección de carga 0x00000000ffff0080
                 0x0000000000000000                __INICIO_RAM_RUTINAS = .
-                0x00000000ffff007d                __INICIO_ROM_RUTINAS = LOADADDR (.rutinas)
+                0x00000000ffff0080                __INICIO_ROM_RUTINAS = LOADADDR (.rutinas)
  bin/copy.elf(.copy)
- .copy          0x0000000000000000       0x18 bin/copy.elf
+ .copy          0x0000000000000000       0x15 bin/copy.elf
                 0x0000000000000000                COPY_INIT
                 0x000000000000000b                COPY_CICLO
  *(.rutinas)
-                0x0000000000000018                __LONGITUD_RUTINAS = SIZEOF (.rutinas)
+                0x0000000000000015                __LONGITUD_RUTINAS = SIZEOF (.rutinas)
 
 .nucleo         0x0000000000300000        0x6 dirección de carga 0x00000000ffff0095
                 0x0000000000300000                __INICIO_NUCLEO = .

@@ -90,7 +90,7 @@ Guión del enlazador y mapa de memoria
                 0x000000000030013a                FIN
                 0x0000000000000166                __LONGITUD_ROM = SIZEOF (.nucleo)
 
-.rutinas        0x0000000000f00000       0xfa dirección de carga 0x00000000ffff0476
+.rutinas        0x0000000000f00000       0xfc dirección de carga 0x00000000ffff0476
                 0x0000000000f00000                __INICIO_RAM_RUTINAS = .
                 0x00000000ffff0476                __INICIO_ROM_RUTINAS = LOADADDR (.rutinas)
  bin/copy.elf(.copy)
@@ -98,10 +98,10 @@ Guión del enlazador y mapa de memoria
                 0x0000000000f00000                COPY_INIT
                 0x0000000000f0000b                COPY_CICLO
  *(.rutinas)
- .rutinas       0x0000000000f00015       0xe5 bin/rutinas.elf
+ .rutinas       0x0000000000f00015       0xe7 bin/rutinas.elf
                 0x0000000000f00015                CARGAR_TABLA
                 0x0000000000f00045                CARGAR_TABLA_2
-                0x00000000000000fa                __LONGITUD_RUTINAS = SIZEOF (.rutinas)
+                0x00000000000000fc                __LONGITUD_RUTINAS = SIZEOF (.rutinas)
 
 .reset          0x00000000fffffff0       0x10
  *(.reset)

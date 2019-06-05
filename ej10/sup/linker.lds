@@ -9,41 +9,12 @@
  *    BSS tarea_1             0x00421000
  *    DATA tarea_1            0x00422000
  *    datos                   0x004E0000
+ *    bss 					  0x004F0000
  *	  rutinas 				  0x00F00000 
  *    stack 				  0x1FEFB000
  *    rom_init                0xFFFF0000
  *    reset_vector            0xFFFFFFF0
  */
-
-
-/* SECTIONS:
-+-----+------+------------------------------+----------------+----------------+------------------+-----------+
-| RAM | Task |        Memory region         | Output section | Input sections | Physical Address | 4KB pages |
-+-----+------+------------------------------+----------------+----------------+------------------+-----------+
-| yes |      | ISR                          | isr            | isr            | 0x0000 0000      |       256 |
-| yes |      | Tablas de sistema            | systables      | sys_tables     | 0x0010 0000      |        16 |
-|     |      |                              |                |                |                  |			 |
-|     |      | Tablas de paginacion         | page_tables    |                | 0x0011 0000      |       496 |
-|     |      | Tabla de digitos             | tabla_digitos  | tabla_digitos  | 0x0031 0000      |        16 |
-| yes |      | Nucleo                       | Nucleo         | 	nucleo        | 0x0040 0000      |        16 |
-|     |      |                              |                | 			      |                  |           |
-|     |      |                              |                | 			      |                  |			 |
-| yes |  1   | TEXT Tarea 1                 | TEXT_task_1    | TEXT_task_1    | 0x0032 0000      |         1 |
-|     |  1   | BSS Tarea 1                  |                |                | 0x0032 1000      |         1 |
-|     |  1   | DATA Tarea 1                 |                |                | 0x0032 2000      |       190 |
-|     |      | Datos                        | DATA           | datos          | 0x003E 0000      |    130075 |
-|     |      | Pila                         |                |                | 0x1FFF B000      |         3 |
-|     |  1   | Pila Tarea 1                 |                |                | 0x1FFF E000      |         3 |
-|     |      |                              |                |                |                  |           |
-|     |      | Secuencia inicialización ROM | init_code      | init           | 0xFFFF 0000      |           |
-|     |      |                              |                | 		          |                  |           |
-|     |      |                              |                | 		          |                  |           |
-|     |      |                              |                | 	              |                  |           |
-|     |      |                              |                | 				  |                  |           |
-|     |      | Vector de reset              | reset  		 | reset          | 0xFFFF FFF0      |           |
-+-----+------+------------------------------+----------------+----------------+------------------+-----------+
- */
-
 
 
 
@@ -134,6 +105,12 @@ SECTIONS
 	 __INICIO_ROM_DATOS = LOADADDR(.datos);
 	 *(.datos);} AT >rom_init
     __LONGITUD_DATOS = SIZEOF(.datos);
+
+    .bss 0x004F0000:
+	{__INICIO_RAM_BSS = .;
+	 __INICIO_ROM_BSS = LOADADDR(.bss);
+	 *(.bss);} AT >rom_init
+    __LONGITUD_BSS = SIZEOF(.bss);
 		
 
   	 .rutinas 0x00F00000 :

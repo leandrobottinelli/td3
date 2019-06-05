@@ -22,7 +22,6 @@ GLOBAL isr33_handler
 
 
 
-;GLOBAL POLLING
 GLOBAL LECTURA_TECLA
 EXTERN FIN
 EXTERN __INICIO_RAM_TECLADO_RUTINA
@@ -45,7 +44,8 @@ jnc POLLING
 LECTURA_TECLA:
 
 in al, _PUERTO_TECLADO_CODIGO
-bt ax, 0x7
+bt ax, 0x7							 ; Me fijo si la tecla fue presionada o soltada
+jc POLLING 							 ; Me quedo solo con la tecla persionada
 
 xchg bx,bx
 ret

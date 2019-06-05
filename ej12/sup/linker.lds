@@ -3,8 +3,8 @@
 					  TEXT Tarea 1     cambiado a 0x00420000 respecto a la guia
 					  BSS Tarea 1      cambiado a 0x00421000 respecto a la guia
 					  DATA Tarea 1     cambiado a 0x00422000 respecto a la guia
-
-
+					
+		
 +-----+------+------------------------------+----------------+----------------+------------------+------------------+-----------+
 | RAM | Task |        Memory region         | Output section | Input sections | Physical Address | 4KB pages |  Logic Address   |
 +-----+------+------------------------------+----------------+----------------+------------------+------------------+-----------+
@@ -21,8 +21,8 @@
 | yes |  1   | TEXT Tarea 1                 | TEXT_task_1    | TEXT_task_1    | 0x0042 0000      |           | 0x0052 0000    	|
 |     |  1   | BSS Tarea 1                  |                |                | 0x0042 1000      |           | 0x0052 1000   	|
 |     |  1   | DATA Tarea 1                 |                |                | 0x0042 2000      |           | 0x0052 2000   	|
-|     |      | Datos                        | DATA           | datos          | 0x004E 0000      |           | 0x004E 0000   	|
-|     |      | bss                          | bss            | bss            | 0x004F 0000      |           | 0x004F 0000   	|
+|     |      | Datos                        | DATA           | datos          | 0x004E 0000      |           | 0x005E 0000   	|
+|     |      | BSS                          | BSS            | BSS            | 0x004F 0000      |           | 0x005F 0000   	|
 |     |      | Pila                         |                |                | 0x1FFF B000      |           | 0x1FFF B000   	|
 |     |  1   | Pila Tarea 1                 |                |                | 0x1FFF E000      |           | 0x0041 3000    	|
 |     |      |                              |                |                |                  |           |					|
@@ -36,18 +36,19 @@
 */
 
 
-__DIR_FISICA_ISR           = 0x00000000; 
-__DIR_FISICA_VIDEO         = 0x000B8000;
-__DIR_FISICA_SYS_TABLES    = 0x00100000;
-__DIR_FISICA_PAGE_TABLES   = 0x00110000;
-__DIR_FISICA_NUCLEO        = 0x00400000;
-__DIR_FISICA_TABLA_DIGITOS = 0x00310000;
-__DIR_FISICA_TEXT_TAREA_1  = 0x00420000;
-__DIR_FISICA_BSS_TAREA_1   = 0x00421000;
-__DIR_FISICA_DATA_TAREA_1  = 0x00422000;
-__DIR_FISICA_DATOS         = 0x004E0000;
-__DIR_FISICA_BSS           = 0x004F0000;
-__DIR_FISICA_RUTINAS       = 0x00F00000;
+__DIR_FISICA_ISR           			= 0x00000000; 
+__DIR_FISICA_VIDEO         			= 0x000B8000;
+__DIR_FISICA_SYS_TABLES    			= 0x00100000;
+__DIR_FISICA_PAGE_TABLES   			= 0x00110000;
+__DIR_FISICA_NUCLEO        			= 0x00400000;
+__DIR_FISICA_TABLA_DIGITOS 			= 0x00310000;
+__DIR_FISICA_TEXT_TAREA_1  			= 0x00420000;
+__DIR_FISICA_BSS_TAREA_1  			= 0x00421000;
+__DIR_FISICA_DATA_TAREA_1  			= 0x00422000;
+__DIR_FISICA_DATOS         			= 0x004E0000;
+__DIR_FISICA_BSS         			= 0x004F0000;
+__DIR_FISICA_RUTINAS       			= 0x00F00000;
+__DIR_FISICA_PAGINAS_NO_PRESENTES   = 0x08000000;
 
 
 
@@ -140,7 +141,6 @@ SECTIONS
 	 __INICIO_ROM_DATOS = LOADADDR(.datos);
 	 *(.datos);} AT >rom_init
     __LONGITUD_DATOS = SIZEOF(.datos);
-
 
     .bss 0x004F0000:
 	{__INICIO_RAM_BSS = .;

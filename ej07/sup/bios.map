@@ -25,70 +25,70 @@ Guión del enlazador y mapa de memoria
                 0x00000000ffff00a5                _pit_configure
 
 .rutina_teclado_isr
-                0x0000000000000000       0xc2 dirección de carga 0x00000000ffff00da
+                0x0000000000000000       0xc4 dirección de carga 0x00000000ffff00da
                 0x0000000000000000                __INICIO_RAM_TECLADO_RUTINA = .
                 0x00000000ffff00da                __INICIO_ROM_TECLADO_RUTINA = LOADADDR (.rutina_teclado_isr)
  *(.rutina_teclado_isr)
  .rutina_teclado_isr
-                0x0000000000000000       0xc2 bin/rutinas_teclado_isr.elf
+                0x0000000000000000       0xc4 bin/rutinas_teclado_isr.elf
                 0x0000000000000008                LECTURA_TECLA
-                0x0000000000000019                isr0_handler_DE
-                0x0000000000000020                isr2_handler_NMI
-                0x0000000000000027                isr3_handler_BP
-                0x000000000000002e                isr4_handler_OF
-                0x0000000000000035                isr5_handler_BR
-                0x000000000000003c                isr6_handler_UD
-                0x0000000000000043                isr7_handler_NM
-                0x000000000000004a                isr8_handler_DF
-                0x0000000000000051                isr9_handler
-                0x0000000000000058                isr10_handler_TS
-                0x000000000000005f                isr11_handler_NP
-                0x0000000000000066                isr12_handler_SS
-                0x000000000000006d                isr13_handler_GP
-                0x0000000000000074                isr14_handler_PF
-                0x000000000000007b                isr15_handler
-                0x0000000000000082                isr16_handler_MF
-                0x0000000000000089                isr17_handler_AC
-                0x0000000000000090                isr18_handler_MC
-                0x000000000000009a                isr19_handler_XF
-                0x00000000000000a4                isr32_handler
-                0x00000000000000ae                isr33_handler
-                0x00000000000000c2                __LONGITUD_TECLADO_RUTINA = SIZEOF (.rutina_teclado_isr)
+                0x000000000000001b                isr0_handler_DE
+                0x0000000000000022                isr2_handler_NMI
+                0x0000000000000029                isr3_handler_BP
+                0x0000000000000030                isr4_handler_OF
+                0x0000000000000037                isr5_handler_BR
+                0x000000000000003e                isr6_handler_UD
+                0x0000000000000045                isr7_handler_NM
+                0x000000000000004c                isr8_handler_DF
+                0x0000000000000053                isr9_handler
+                0x000000000000005a                isr10_handler_TS
+                0x0000000000000061                isr11_handler_NP
+                0x0000000000000068                isr12_handler_SS
+                0x000000000000006f                isr13_handler_GP
+                0x0000000000000076                isr14_handler_PF
+                0x000000000000007d                isr15_handler
+                0x0000000000000084                isr16_handler_MF
+                0x000000000000008b                isr17_handler_AC
+                0x0000000000000092                isr18_handler_MC
+                0x000000000000009c                isr19_handler_XF
+                0x00000000000000a6                isr32_handler
+                0x00000000000000b0                isr33_handler
+                0x00000000000000c4                __LONGITUD_TECLADO_RUTINA = SIZEOF (.rutina_teclado_isr)
 
-.sys_tables     0x0000000000100000      0x134 dirección de carga 0x00000000ffff019c
+.sys_tables     0x0000000000100000      0x134 dirección de carga 0x00000000ffff019e
                 0x0000000000100000                __INICIO_RAM_SYS_TABLES = .
-                0x00000000ffff019c                __INICIO_ROM_SYS_TABLES = LOADADDR (.sys_tables)
+                0x00000000ffff019e                __INICIO_ROM_SYS_TABLES = LOADADDR (.sys_tables)
  *(.sys_tables)
  .sys_tables    0x0000000000100000      0x134 bin/sys_tables.elf
                 0x0000000000100018                img_gdtr_32
                 0x000000000010012e                img_idtr
                 0x0000000000000134                __LONGITUD_SYS_TABLES = SIZEOF (.sys_tables)
 
-.tabla_digitos  0x0000000000310000        0x0 dirección de carga 0x00000000ffff02d0
+.tabla_digitos  0x0000000000310000        0x0 dirección de carga 0x00000000ffff02d2
                 0x0000000000310000                __INICIO_RAM_TABLA_DIGITOS = .
-                0x00000000ffff02d0                __INICIO_ROM_TABLA_DIGITOS = LOADADDR (.tabla_digitos)
+                0x00000000ffff02d2                __INICIO_ROM_TABLA_DIGITOS = LOADADDR (.tabla_digitos)
  *(.Tabla_Digitos)
 
-.datos          0x00000000003e0000        0x9 dirección de carga 0x00000000ffff02d0
+.datos          0x00000000003e0000        0x9 dirección de carga 0x00000000ffff02d2
                 0x00000000003e0000                __INICIO_RAM_DATOS = .
-                0x00000000ffff02d0                __INICIO_ROM_DATOS = LOADADDR (.datos)
+                0x00000000ffff02d2                __INICIO_ROM_DATOS = LOADADDR (.datos)
  *(.datos)
  .datos         0x00000000003e0000        0x9 bin/bios.elf
                 0x00000000003e0000                _CONTADOR_TABLA
                 0x00000000003e0008                flag_int_teclado
                 0x0000000000000009                __LONGITUD_DATOS = SIZEOF (.datos)
 
-.nucleo         0x0000000000300000       0xab dirección de carga 0x00000000ffff02d9
+.nucleo         0x0000000000300000       0xab dirección de carga 0x00000000ffff02db
                 0x0000000000300000                __INICIO_RAM_NUCLEO = .
-                0x00000000ffff02d9                __INICIO_ROM_NUCLEO = LOADADDR (.nucleo)
+                0x00000000ffff02db                __INICIO_ROM_NUCLEO = LOADADDR (.nucleo)
  *(.nucleo)
  .nucleo        0x0000000000300000       0xab bin/bios.elf
                 0x00000000003000a7                FIN
                 0x00000000000000ab                __LONGITUD_ROM = SIZEOF (.nucleo)
 
-.rutinas        0x0000000000f00000       0x2d dirección de carga 0x00000000ffff0384
+.rutinas        0x0000000000f00000       0x2d dirección de carga 0x00000000ffff0386
                 0x0000000000f00000                __INICIO_RAM_RUTINAS = .
-                0x00000000ffff0384                __INICIO_ROM_RUTINAS = LOADADDR (.rutinas)
+                0x00000000ffff0386                __INICIO_ROM_RUTINAS = LOADADDR (.rutinas)
  bin/copy.elf(.copy)
  .copy          0x0000000000f00000       0x18 bin/copy.elf
                 0x0000000000f00000                COPY_INIT

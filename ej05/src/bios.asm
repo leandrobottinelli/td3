@@ -1,5 +1,5 @@
-
-  ;Entro a modo_proteg
+ 
+  ; Entro a modo_proteg
   ; Necesito copiar la funcion copy en rutinas
   ; Llamo a la funcion copy para que me copie la ROM a nucleo
 
@@ -43,9 +43,9 @@ inicio:
  cli       ;Deshabilito interrupciones
  
 
-  db 0x66            ;Requerido para direcciones mayores
-  lgdt  [cs:img_gdtr] ;que 0x00FFFFFFF. 
-  mov eax,cr0        ;Habiltación bit de modo protegido. 
+  db 0x66            				; Requerido para direcciones mayores
+  lgdt  [cs:img_gdtr] 				; que 0x00FFFFFFF. 
+  mov eax,cr0       				; Habiltación bit de modo protegido. 
   or eax,1
   mov cr0,eax
  	
@@ -65,24 +65,25 @@ modo_proteg:
   push __INICIO_RAM_RUTINAS
   push __LONGITUD_RUTINAS
 
-  call __INICIO_ROM_RUTINAS ;esta es la direccion VMA
+  call __INICIO_ROM_RUTINAS 		; Copio la funcion copy a mano de ROM a RAM
 
   pop eax
   pop eax
   pop eax
 
 
-  push __INICIO_ROM;copio el resto de la rom a una seccion de la ram
+  push __INICIO_ROM 
   push __INICIO_NUCLEO
-  push __LONGITUD_ROM ;__LONGITUD_ROM 
+  push __LONGITUD_ROM 
 
-  call COPY_INIT
+  call COPY_INIT				    ; Copio el nucleo de ROM a RAM
   
   pop eax
   pop eax
   pop eax
-
-  jmp __INICIO_NUCLEO ;call? PREGUNTAR
+  
+  xchg bx,bx
+  jmp __INICIO_NUCLEO 				; Salto a RAM donde ejecuto el nucleo				
 
 section .nucleo
 

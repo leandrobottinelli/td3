@@ -6,6 +6,7 @@
  *    tabla_digitos           0x00310000
  *    tarea_1                 0x00320000
  *    datos                   0x003E0000
+ *    bss                     0x003F0000
  *	  rutinas 				  0x00F00000 
  *    stack 				  0x1FEFB000
  *    rom_init                0xFFFF0000
@@ -74,6 +75,12 @@ SECTIONS
 	 *(.datos);} AT >rom_init
     __LONGITUD_DATOS = SIZEOF(.datos);
 		
+    
+    .bss 0x003F0000:
+	{__INICIO_RAM_BSS = .;
+	 __INICIO_ROM_BSS = LOADADDR(.bss);
+	 *(.bss);} AT >rom_init
+    __LONGITUD_BSS = SIZEOF(.bss);
 
   	 .rutinas 0x00F00000 :
 	{ __INICIO_RAM_RUTINAS  = .;

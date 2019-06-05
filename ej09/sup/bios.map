@@ -86,36 +86,43 @@ Guión del enlazador y mapa de memoria
                 0x0000000000320000                SUMA_TABLA_DIGITOS
                 0x000000000000003e                __LONGITUD_TAREA_1 = SIZEOF (.tarea_1)
 
-.datos          0x00000000003e0000       0x58 dirección de carga 0x00000000ffff17d3
+.datos          0x00000000003e0000        0x8 dirección de carga 0x00000000ffff17d3
                 0x00000000003e0000                __INICIO_RAM_DATOS = .
                 0x00000000ffff17d3                __INICIO_ROM_DATOS = LOADADDR (.datos)
  *(.datos)
- .datos         0x00000000003e0000       0x58 bin/bios.elf
-                0x00000000003e0000                _CONTADOR_TECLAS
-                0x00000000003e0008                _CONTADOR_TECLAS_BYTES
-                0x00000000003e0010                _ENTRADA_TABLA
-                0x00000000003e0018                _flag_int_teclado
-                0x00000000003e0020                _flag_16_TECLAS
-                0x00000000003e0028                _flag_int_timer
-                0x00000000003e0030                _CONTADOR_TIMER
-                0x00000000003e0040                _NUMERO_TOTAL
-                0x00000000003e0050                _BUFFER_NUMERO_PANTALLA
-                0x0000000000000058                __LONGITUD_DATOS = SIZEOF (.datos)
+ .datos         0x00000000003e0000        0x8 bin/bios.elf
+                0x00000000003e0000                _ENTRADA_TABLA
+                0x0000000000000008                __LONGITUD_DATOS = SIZEOF (.datos)
 
-.rutinas        0x0000000000f00000      0x1f4 dirección de carga 0x00000000ffff182b
+.bss            0x00000000003f0000       0x50 dirección de carga 0x00000000ffff17db
+                0x00000000003f0000                __INICIO_RAM_BSS = .
+                0x00000000ffff17db                __INICIO_ROM_BSS = LOADADDR (.bss)
+ *(.bss)
+ .bss           0x00000000003f0000       0x50 bin/bios.elf
+                0x00000000003f0000                _CONTADOR_TECLAS
+                0x00000000003f0008                _CONTADOR_TECLAS_BYTES
+                0x00000000003f0010                _flag_int_teclado
+                0x00000000003f0018                _flag_16_TECLAS
+                0x00000000003f0020                _flag_int_timer
+                0x00000000003f0028                _CONTADOR_TIMER
+                0x00000000003f0038                _NUMERO_TOTAL
+                0x00000000003f0048                _BUFFER_NUMERO_PANTALLA
+                0x0000000000000050                __LONGITUD_BSS = SIZEOF (.bss)
+
+.rutinas        0x0000000000f00000      0x1f6 dirección de carga 0x00000000ffff17db
                 0x0000000000f00000                __INICIO_RAM_RUTINAS = .
-                0x00000000ffff182b                __INICIO_ROM_RUTINAS = LOADADDR (.rutinas)
+                0x00000000ffff17db                __INICIO_ROM_RUTINAS = LOADADDR (.rutinas)
  bin/copy.elf(.copy)
  .copy          0x0000000000f00000       0x15 bin/copy.elf
                 0x0000000000f00000                COPY_INIT
                 0x0000000000f0000b                COPY_CICLO
  *(.rutinas)
- .rutinas       0x0000000000f00015       0xe5 bin/rutinas.elf
+ .rutinas       0x0000000000f00015       0xe7 bin/rutinas.elf
                 0x0000000000f00015                CARGAR_TABLA
                 0x0000000000f00045                CARGAR_TABLA_2
- .rutinas       0x0000000000f000fa       0xfa bin/pantalla.elf
-                0x0000000000f000fa                MOSTRAR_PANTALLA
-                0x00000000000001f4                __LONGITUD_RUTINAS = SIZEOF (.rutinas)
+ .rutinas       0x0000000000f000fc       0xfa bin/pantalla.elf
+                0x0000000000f000fc                MOSTRAR_PANTALLA
+                0x00000000000001f6                __LONGITUD_RUTINAS = SIZEOF (.rutinas)
 
 .reset          0x00000000fffffff0       0x10
  *(.reset)

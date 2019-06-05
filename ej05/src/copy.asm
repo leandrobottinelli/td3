@@ -14,13 +14,12 @@ COPY_INIT:
 
 COPY_CICLO:
     
-    mov al, [esi]  ;copio 1 byte 
-    mov [edi], al  ;
-    inc esi        ;muevo el puntero de fuente 
-    inc edi        ;muevo el puntero de destino
+    mov al, [esi]     ; Copio 1 byte  de la direccion de origen
+    mov [edi], al     ; Copio el byte a la direccion de destino
+    inc esi           ; Muevo el puntero de fuente 
+    inc edi           ; Muevo el puntero de destino
     dec ecx
-    jne COPY_CICLO   ;verifica el flag de 0 del ecx
-    xchg bx,bx
+    jne COPY_CICLO    ; Verifica el flag de 0 del ecx
 
     ret
 

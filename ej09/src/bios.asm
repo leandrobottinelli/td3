@@ -24,8 +24,6 @@
   ; Voy guardando cada vector de teclas, ya acomodados uno debajo de otro en la tabla.
 
   ; NOTA: Las teclas las paso a traves de la pila 
-  ; Falta acomodar, si se excede de 16 teclas el orden de como se guarda
-  ; Falta arreglar si tocan una sola tecla
 ;-----------------------------------------------------------------------------------
 
 
@@ -136,7 +134,7 @@ section .init
 jmp inicio
 
 gdt:
-          db 0,0,0,0,0,0,0,0  ;Descriptor nulo
+          db 0,0,0,0,0,0,0,0  ; Descriptor nulo
 ds_sel    equ $-gdt
           db 0xFF, 0xFF, 0, 0, 0, 0x92, 0xCF, 0
 cs_sel    equ $-gdt
@@ -152,11 +150,11 @@ img_gdtr:
 
 
 inicio:
-  cli                ;Deshabilito interrupciones
+  cli                             ; Deshabilito interrupciones
   call _bios_init
-  db 0x66            ;Requerido para direcciones mayores
-  lgdt [cs:img_gdtr] ;que 0x00FFFFFFF. 
-  mov eax,cr0        ;Habiltación bit de modo protegido. 
+  db 0x66                         ; Requerido para direcciones mayores
+  lgdt [cs:img_gdtr]              ; que 0x00FFFFFFF. 
+  mov eax,cr0                     ; Habiltación bit de modo protegido. 
   or eax,1
   mov cr0,eax
  	
@@ -178,7 +176,7 @@ modo_proteg:
   push __INICIO_RAM_RUTINAS
   push __LONGITUD_RUTINAS
 
-  call __INICIO_ROM_RUTINAS ;Copio la funcion copy en RAM a mano
+  call __INICIO_ROM_RUTINAS    ; Copio la funcion copy en RAM a mano
 
   pop eax
   pop eax
@@ -191,8 +189,8 @@ modo_proteg:
   push __LONGITUD_ROM
 
 
-  call COPY_INIT            ;Copio toda la ROM en RAM desde
-  pop eax                   ;funcion copy en RAM
+  call COPY_INIT               ; Copio parte de la ROM en RAM desde
+  pop eax                      ; funcion copy en RAM
   pop eax
   pop eax
 
@@ -416,14 +414,14 @@ WHILE:
 
     FIN:
       
-      cmp byte[_CONTADOR_TECLAS],0x0  ;Me fijo si estoy parado en la primer pocision del vector
+      cmp byte[_CONTADOR_TECLAS],0x0    ; Me fijo si estoy parado en la primer pocision del vector
       jz CASO_TECLA_ENTER_SOLA
       JMP CASO_NORMAL
 
 
       CASO_TECLA_ENTER_SOLA:
-      cmp byte[_flag_16_TECLAS],0x0    ;Me fijo si la cantidad de teclas fue  realmente 0 o multiplo de 16
-      jz RESET                         ;Si fue 0, es porque solo se presiono la tecla ENTER
+      cmp byte[_flag_16_TECLAS],0x0    ; Me fijo si la cantidad de teclas fue  realmente 0 o multiplo de 16
+      jz RESET                         ; Si fue 0, es porque solo se presiono la tecla ENTER
 
       CASO_NORMAL:
       ;BKP
@@ -435,8 +433,8 @@ WHILE:
 
       RESET:
       mov ax, 0x0
-      mov [_flag_int_teclado], ax     ;Reinicio flag de teclado 
-      sti                             ;Habilito interrupciones nuevamente
+      mov [_flag_int_teclado], ax     ; Reinicio flag de teclado 
+      sti                             ; Habilito interrupciones nuevamente
 
 
 
@@ -449,15 +447,17 @@ jmp WHILE
 
 ;----------------------------------------------------------------------
 section .datos
+_ENTRADA_TABLA: dq __INICIO_RAM_TABLA_DIGITOS + 0x10 ; Puntero a la primera entrada de tabla libre
 
-_CONTADOR_TECLAS: dq 0x00       ;Contador de teclas validas presionadas
-_CONTADOR_TECLAS_BYTES: dq 0x0  ;Contador para tomar de a dos hexas, y ponerlos en un byte
-_ENTRADA_TABLA: dq __INICIO_RAM_TABLA_DIGITOS + 0x10 ;Puntero a la primera entrada de tabla libre
-_flag_int_teclado: dq 0x00      ;Flag si interrupio el teclado
-_flag_16_TECLAS: dq 0x00        ;Flag si se presionaron mas de 16 teclas
-_flag_int_timer: dq 0x00
-_CONTADOR_TIMER: dq 0x00        ;Contador de interrupciones del PIT cada 10ms
-_CONTADOR_TIMER_2: dq 0x00      ;Contador de interrupciones del PIT cada 100ms
-_NUMERO_TOTAL: dq 0x00 ,0x00
-_BUFFER_NUMERO_PANTALLA: dq 0x00
+section .bss nobits
+
+_CONTADOR_TECLAS: resq 1       ; Contador de teclas validas presionadas
+_CONTADOR_TECLAS_BYTES: resq 1 ; Contador para tomar de a dos hexas, y ponerlos en un byte
+_flag_int_teclado: resq 1      ; Flag si interrupio el teclado
+_flag_16_TECLAS: resq 1        ; Flag si se presionaron mas de 16 teclas
+_flag_int_timer: resq 1
+_CONTADOR_TIMER: resq 1        ; Contador de interrupciones del PIT cada 10ms
+_CONTADOR_TIMER_2: resq 1      ; Contador de interrupciones del PIT cada 100ms
+_NUMERO_TOTAL: resq 2
+_BUFFER_NUMERO_PANTALLA: resq 1
 

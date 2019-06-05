@@ -24,7 +24,6 @@
   ; Voy guardando cada vector de teclas, ya acomodados uno debajo de otro en la tabla.
 
   ; NOTA: Las teclas las paso a traves de la pila 
-  ; Falta acomodar, si se excede de 16 teclas el orden de como se guarda
 ;-----------------------------------------------------------------------------------
 
 
@@ -141,10 +140,10 @@ img_gdtr:
 
 
 inicio:
-  cli                ;Deshabilito interrupciones
-  db 0x66            ;Requerido para direcciones mayores
-  lgdt [cs:img_gdtr] ;que 0x00FFFFFFF. 
-  mov eax,cr0        ;Habiltación bit de modo protegido. 
+  cli                ; Deshabilito interrupciones
+  db 0x66            ; Requerido para direcciones mayores
+  lgdt [cs:img_gdtr] ; que 0x00FFFFFFF. 
+  mov eax,cr0        ; Habiltación bit de modo protegido. 
   or eax,1
   mov cr0,eax
  	
@@ -166,7 +165,7 @@ modo_proteg:
   push __INICIO_RAM_RUTINAS
   push __LONGITUD_RUTINAS
 
-  call __INICIO_ROM_RUTINAS ;Copio la funcion copy en RAM a mano
+  call __INICIO_ROM_RUTINAS  ; Copio la funcion copy en RAM a mano
 
   pop eax
   pop eax
@@ -179,8 +178,8 @@ modo_proteg:
   push __LONGITUD_ROM
 
 
-  call COPY_INIT            ;Copio toda la ROM en RAM desde
-  pop eax                   ;funcion copy en RAM
+  call COPY_INIT            ; Copio parte la ROM en RAM desde
+  pop eax                   ; funcion copy en RAM
   pop eax
   pop eax
 
@@ -382,21 +381,21 @@ WHILE:
     SIGUIENTE:
     
       mov ax, 0x0
-      mov [_flag_int_teclado], ax      ;Reinicio flag de teclado 
-      sti                              ;Habilito interrupciones nuevamente
-      jmp WHILE                        ;Espero nuevas teclas
+      mov [_flag_int_teclado], ax      ; Reinicio flag de teclado 
+      sti                              ; Habilito interrupciones nuevamente
+      jmp WHILE                        ; Espero nuevas teclas
 
 
     FIN:
       
-      cmp byte[_CONTADOR_TECLAS],0x0  ;Me fijo si estoy parado en la primer pocision del vector
+      cmp byte[_CONTADOR_TECLAS],0x0   ; Me fijo si estoy parado en la primer pocision del vector
       jz CASO_TECLA_ENTER_SOLA
       JMP CASO_NORMAL
 
 
       CASO_TECLA_ENTER_SOLA:
-      cmp byte[_flag_16_TECLAS],0x0    ;Me fijo si la cantidad de teclas fue  realmente 0 o multiplo de 16
-      jz RESET                         ;Si fue 0, es porque solo se presiono la tecla ENTER
+      cmp byte[_flag_16_TECLAS],0x0    ; Me fijo si la cantidad de teclas fue  realmente 0 o multiplo de 16
+      jz RESET                         ; Si fue 0, es porque solo se presiono la tecla ENTER
 
       CASO_NORMAL:
       BKP
@@ -404,8 +403,8 @@ WHILE:
 
       RESET:
       mov ax, 0x0
-      mov [_flag_int_teclado], ax     ;Reinicio flag de teclado 
-      sti                             ;Habilito interrupciones nuevamente
+      mov [_flag_int_teclado], ax     ; Reinicio flag de teclado 
+      sti                             ; Habilito interrupciones nuevamente
 
 
 

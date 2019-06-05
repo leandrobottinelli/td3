@@ -4,6 +4,9 @@
   ; Copio la funcion copy en rutinas(RAM)
   ; Llamo a la funcion copy para que me copie la ROM a nucleo (RAM)
 
+  ; Ejecuto en RAM, donde cargo tablas de paginacion
+  ; Activo paginacion y copio todas las secciones de ROM a RAM
+
   ; Espero interrupcion de tecla, mientras tengo el flag desactivado
   ; Espero interrupcion de timer, mientras tengo el flag desactivado
 
@@ -24,62 +27,78 @@
   ; Voy guardando cada vector de teclas, ya acomodados uno debajo de otro en la tabla.
 
   ; NOTA: Las teclas las paso a traves de la pila 
-  ;-----------------------------------------------------------------------------------
+;-----------------------------------------------------------------------------------
 
-
-EXTERN __FIN_PILA
-EXTERN __SIZE_PILA
-
-EXTERN inicio2
-
-EXTERN COPY_INIT
-EXTERN POLLING
-
-EXTERN __INICIO_RAM_RUTINAS
-EXTERN __INICIO_ROM_RUTINAS
-EXTERN __INICIO_ROM
-EXTERN __INICIO_RAM_NUCLEO
-EXTERN __INICIO_ROM_NUCLEO
-
-EXTERN __INICIO_RAM_SYS_TABLES
-EXTERN __INICIO_ROM_SYS_TABLES
-
-
-EXTERN __INICIO_RAM_PAGE_TABLES
-EXTERN __INICIO_ROM_PAGE_TABLES
 
 EXTERN __INICIO_RAM_ISR
 EXTERN __INICIO_ROM_ISR
-
+EXTERN __INICIO_RAM_SYS_TABLES
+EXTERN __INICIO_ROM_SYS_TABLES
+EXTERN __INICIO_RAM_PAGE_TABLES
+EXTERN __INICIO_ROM_PAGE_TABLES
 EXTERN __INICIO_ROM_TABLA_DIGITOS 
 EXTERN __INICIO_RAM_TABLA_DIGITOS 
-
 EXTERN __INICIO_RAM_TEXT_TAREA_1
 EXTERN __INICIO_ROM_TEXT_TAREA_1
-
+EXTERN __INICIO_RAM_NUCLEO
+EXTERN __INICIO_ROM_NUCLEO
 EXTERN __INICIO_ROM_DATOS 
 EXTERN __INICIO_RAM_DATOS
+EXTERN __INICIO_ROM_BSS 
+EXTERN __INICIO_RAM_BSS
+EXTERN __INICIO_RAM_RUTINAS
+EXTERN __INICIO_ROM_RUTINAS
+EXTERN __INICIO_ROM
 
 EXTERN __LONGITUD_ISR
 EXTERN __LONGITUD_SYS_TABLES
 EXTERN __LONGITUD_PAGE_TABLES
 EXTERN __LONGITUD_RUTINAS
-EXTERN __LONGITUD_ROM
+EXTERN __LONGITUD_NUCLEO
 EXTERN __LONGITUD_DATOS
+EXTERN __LONGITUD_BSS
 EXTERN __LONGITUD_TEXT_TAREA_1
+
+
+EXTERN __FIN_PILA
+EXTERN __SIZE_PILA
+
+
+EXTERN __DIR_FISICA_ISR            
+EXTERN __DIR_FISICA_VIDEO         
+EXTERN __DIR_FISICA_SYS_TABLES    
+EXTERN __DIR_FISICA_PAGE_TABLES   
+EXTERN __DIR_FISICA_NUCLEO        
+EXTERN __DIR_FISICA_TABLA_DIGITOS 
+EXTERN __DIR_FISICA_TEXT_TAREA_1  
+EXTERN __DIR_FISICA_BSS_TAREA_1   
+EXTERN __DIR_FISICA_DATA_TAREA_1  
+EXTERN __DIR_FISICA_DATOS         
+EXTERN __DIR_FISICA_RUTINAS       
+
+;----------------------------------------------------------------------------------
 
 GLOBAL _CONTADOR_TECLAS
 GLOBAL _ENTRADA_TABLA
 GLOBAL _CONTADOR_TECLAS_BYTES
 GLOBAL _CONTADOR_TIMER
 GLOBAL _BUFFER_NUMERO_PANTALLA
+GLOBAL _FALLO_PAGINA_NUMERO
+GLOBAL _CONTADOR_TABLAS_PAGINAS
 GLOBAL _flag_int_timer
+GLOBAL _CONTADOR_PAGINAS_NO_PRESENTES
+
+
+EXTERN COPY_INIT
+EXTERN POLLING
 
 GLOBAL FIN
 
+GLOBAL cs_sel
+GLOBAL ds_sel
+
 EXTERN img_idtr
 EXTERN img_gdtr_32
-
 EXTERN cs_sel_32
 EXTERN ds_sel_32
 
@@ -89,15 +108,14 @@ EXTERN CARGAR_TABLA_2
 EXTERN SUMA_TABLA_DIGITOS
 GLOBAL _NUMERO_TOTAL
 
-GLOBAL cs_sel
-GLOBAL ds_sel
 GLOBAL _flag_int_teclado
 GLOBAL _flag_16_TECLAS
-GLOBAL _FALLO_PAGINA_NUMERO
+
 
 EXTERN _pic_configure
 EXTERN _pit_configure
-EXTERN _bios_init
+EXTERN pantalla_init
+
 EXTERN MOSTRAR_PANTALLA
 EXTERN BUFFER_DOBLE_OFFS
 EXTERN PAGINACION_INIT
@@ -155,18 +173,17 @@ img_gdtr:
 
 inicio:
   cli                ;Deshabilito interrupciones
-  call _bios_init
+  call pantalla_init
   db 0x66            ;Requerido para direcciones mayores
   lgdt [cs:img_gdtr] ;que 0x00FFFFFFF. 
   mov eax,cr0        ;Habiltación bit de modo protegido. 
   or eax,1
   mov cr0,eax
-  BKP
+  
  	
  jmp dword cs_sel:modo_proteg
 
-INICIO_DIR_PAGES       EQU __INICIO_RAM_PAGE_TABLES
-INICIO_TABLA_PAGES     EQU INICIO_DIR_PAGES + 0x1000
+
  
 USE32
 modo_proteg:
@@ -183,9 +200,9 @@ modo_proteg:
 
 
   push __INICIO_ROM_RUTINAS
-  push __INICIO_RAM_RUTINAS
+  push __DIR_FISICA_RUTINAS
   push __LONGITUD_RUTINAS
-
+  
   call __INICIO_ROM_RUTINAS ;Copio la funcion copy en RAM a mano
 
   pop eax
@@ -195,35 +212,29 @@ modo_proteg:
 
 
   push __INICIO_ROM_NUCLEO
-  push __INICIO_RAM_NUCLEO
-  push __LONGITUD_ROM
+  push __DIR_FISICA_NUCLEO
+  push __LONGITUD_NUCLEO
 
 
-  call COPY_INIT            ;Copio toda la ROM en RAM desde
+  call COPY_INIT            ;Copio parte de la ROM en RAM desde
   pop eax                   ;funcion copy en RAM
   pop eax
   pop eax
 
 
-
-
   jmp nucleos
  
-
  ;----------------------------------------------------------------------
 
 section .nucleo
 
 
 nucleos:   
-  
-BKP
 
-  call PAGINACION_INIT
+  call PAGINACION_INIT               ; Cargo el DIRECTORIO y TABLAS de paginacion  
 
 
-
- xchg bx, bx
+  BKP
 
   mov eax,__INICIO_RAM_PAGE_TABLES
   mov cr3,eax                        ;Apuntar a directorio de paginas.
@@ -242,25 +253,23 @@ BKP
   pop eax
 
 
-;BKP
 
   push __INICIO_ROM_SYS_TABLES
   push __INICIO_RAM_SYS_TABLES
   push __LONGITUD_SYS_TABLES
 
-  call COPY_INIT              ;Copio la GDT e IDT a sys_tables(RAM)
+  call COPY_INIT                    ; Copio la GDT e IDT a sys_tables(RAM)
     
   pop eax
   pop eax
   pop eax
 
 
-;BKP
   push __INICIO_ROM_TEXT_TAREA_1
   push __INICIO_RAM_TEXT_TAREA_1
   push __LONGITUD_TEXT_TAREA_1
 
-  call COPY_INIT              ;Copio la tarea_1 a (RAM)
+  call COPY_INIT                   ; Copio la tarea_1 a (RAM)
     
   pop eax
   pop eax
@@ -272,13 +281,13 @@ BKP
   push __INICIO_RAM_DATOS
   push __LONGITUD_DATOS
 
-  call COPY_INIT                ;Copio seccion de datos. Contador de la tabla de digitos
+  call COPY_INIT                  ; Copio seccion de datos. Contador de la tabla de digitos
   
   pop eax
   pop eax
   pop eax
 
-;BKP
+
 
 
 lgdt [cs:img_gdtr_32] 
@@ -289,8 +298,7 @@ call _pic_configure
 call _pit_configure
 
 sti
-xchg bx, bx
-
+BKP
 
 WHILE:
       
@@ -326,15 +334,14 @@ WHILE:
     inc eax
     mov [_CONTADOR_TIMER_2], eax
 
-    push 0x20               ; Guardo el valor de COLUMNAS  
-    push 0x500              ; Guardo el valor de FILAS
+    push 0x20                           ; Guardo el valor de COLUMNAS  
+    push 0x500                          ; Guardo el valor de FILAS
     push _NUMERO_TOTAL
-    call MOSTRAR_PANTALLA
+    call MOSTRAR_PANTALLA               ; Muestro en pantalla el numero cada 10 veces que vence 10ms(base de tiempo)
     pop eax
     pop eax
     pop eax
 
-    ;call 0x0c1111   ; Permite generar un #PF
     
     JMP WHILE
 
@@ -480,19 +487,25 @@ jmp WHILE
 
 
 
-;----------------------------------------------------------------------
+;///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+;///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 section .datos 
-_ENTRADA_TABLA: dq __INICIO_RAM_TABLA_DIGITOS + 0x10 ;Puntero a la primera entrada de tabla libre
+_ENTRADA_TABLA: dq __INICIO_RAM_TABLA_DIGITOS + 0x10 ; Puntero a la primera entrada de tabla libre
+
 
 section .bss nobits
-_CONTADOR_TECLAS: resq 1        ;Contador de teclas validas presionadas
-_CONTADOR_TECLAS_BYTES: resq 1  ;Contador para tomar de a dos hexas, y ponerlos en un byte
-_flag_int_teclado: resq 1      ;Flag si interrupio el teclado
-_flag_16_TECLAS: resq 1        ;Flag si se presionaron mas de 16 teclas
+
+_CONTADOR_TECLAS: resq 1        ; Contador de teclas validas presionadas
+_CONTADOR_TECLAS_BYTES: resq 1  ; Contador para tomar de a dos hexas, y ponerlos en un byte
+_flag_int_teclado: resq 1       ; Flag si interrupio el teclado
+_flag_16_TECLAS: resq 1         ; Flag si se presionaron mas de 16 teclas
 _flag_int_timer: resq 1
-_CONTADOR_TIMER: resq 1        ;Contador de interrupciones del PIT cada 10ms
-_CONTADOR_TIMER_2: resq 1      ;Contador de interrupciones del PIT cada 100ms
-_NUMERO_TOTAL : resq 2
-_FALLO_PAGINA_NUMERO: resq 1
-_BUFFER_NUMERO_PANTALLA: resq 1
+_CONTADOR_TIMER: resq 1         ; Contador de interrupciones del PIT cada 10ms
+_CONTADOR_TIMER_2: resq 1       ; Contador de interrupciones del PIT cada 100ms
+_NUMERO_TOTAL : resq 2          ; Suma total de los numeros cargados en la TABLA_DIGITOS
+_FALLO_PAGINA_NUMERO: resq 1    ; Direccion de la pagina que falla CR2
+_CONTADOR_PAGINAS_NO_PRESENTES: resq 1
+_CONTADOR_TABLAS_PAGINAS: resq 1
+_BUFFER_NUMERO_PANTALLA: resq 1 ; Numero en ascii a cargar en la seccion de VIDEO
 

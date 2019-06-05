@@ -27,8 +27,6 @@
   ; Voy guardando cada vector de teclas, ya acomodados uno debajo de otro en la tabla.
 
   ; NOTA: Las teclas las paso a traves de la pila 
-  ; Falta acomodar, si se excede de 16 teclas el orden de como se guarda
-  ; Falta arreglar si tocan una sola tecla
 ;-----------------------------------------------------------------------------------
 
 
@@ -194,7 +192,7 @@ modo_proteg:
 
 ;--------------------------------------------------------------------------------------------------------------------
 
-
+BKP
   push __INICIO_ROM_RUTINAS
   push __DIR_FISICA_RUTINAS
   push __LONGITUD_RUTINAS
@@ -487,11 +485,16 @@ jmp WHILE
 ;///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ;///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-section .datos 
+section .datos
+
+_ENTRADA_TABLA: dq __INICIO_RAM_TABLA_DIGITOS + 0x10 ; Puntero a la primera entrada de tabla libre
+
+
+
+section .bss nobits 
 
 _CONTADOR_TECLAS: resq 1        ; Contador de teclas validas presionadas
 _CONTADOR_TECLAS_BYTES: resq 1  ; Contador para tomar de a dos hexas, y ponerlos en un byte
-_ENTRADA_TABLA: dq __INICIO_RAM_TABLA_DIGITOS + 0x10 ; Puntero a la primera entrada de tabla libre
 _flag_int_teclado: resq 1       ; Flag si interrupio el teclado
 _flag_16_TECLAS: resq 1         ; Flag si se presionaron mas de 16 teclas
 _flag_int_timer: resq 1

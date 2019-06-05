@@ -99,7 +99,7 @@ modo_proteg:
   push __INICIO_RAM_RUTINAS
   push __LONGITUD_RUTINAS
 
-  call __INICIO_ROM_RUTINAS ;Copio la funcion copy en RAM a mano
+  call __INICIO_ROM_RUTINAS    ; Copio la funcion copy en RAM a mano
 
   pop eax
   pop eax
@@ -112,8 +112,8 @@ modo_proteg:
   push __LONGITUD_ROM
 
 
-  call COPY_INIT            ;Copio toda la ROM en RAM desde
-  pop eax                   ;funcion copy en RAM
+  call COPY_INIT              ; Copio parte de la ROM en RAM desde
+  pop eax                     ; funcion copy en RAM
   pop eax
   pop eax
 
@@ -149,13 +149,12 @@ nucleos:
 
 
 pol:
-  push eax
   call POLLING       ; Voy a la funcion de pooling en forma de loop         
   jmp pol            ; hasta la tecla "s"
 
 FIN_POLLING:
   nop 
-  halt               ; Se presiono tecla "s", hago halt de todo
+  hlt               ; Se presiono tecla "s", hago halt de todo
   jmp FIN_POLLING
 
 ;----------------------------------------------------------------------

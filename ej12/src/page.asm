@@ -1,4 +1,6 @@
 GLOBAL PAGINACION_INIT
+GLOBAL PAGINACION
+EXTERN _CONTADOR_TABLAS_PAGINAS
 
 
 EXTERN __INICIO_RAM_RUTINAS
@@ -10,55 +12,51 @@ EXTERN __INICIO_RAM_TABLA_DIGITOS
 EXTERN __INICIO_RAM_TEXT_TAREA_1
 EXTERN __INICIO_RAM_DATOS
 EXTERN __INICIO_RAM_BSS
-
 EXTERN __INICIO_ROM
-EXTERN __LONGITUD_INIT
+
+
+EXTERN __DIR_FISICA_ISR            
+EXTERN __DIR_FISICA_VIDEO         
+EXTERN __DIR_FISICA_SYS_TABLES    
+EXTERN __DIR_FISICA_PAGE_TABLES   
+EXTERN __DIR_FISICA_NUCLEO        
+EXTERN __DIR_FISICA_TABLA_DIGITOS 
+EXTERN __DIR_FISICA_TEXT_TAREA_1  
+EXTERN __DIR_FISICA_BSS_TAREA_1   
+EXTERN __DIR_FISICA_DATA_TAREA_1  
+EXTERN __DIR_FISICA_DATOS         
+EXTERN __DIR_FISICA_RUTINAS
+EXTERN __DIR_FISICA_BSS       
+
 
 EXTERN __LONGITUD_ISR
 EXTERN __LONGITUD_SYS_TABLES
 EXTERN __LONGITUD_PAGE_TABLES
-EXTERN __LONGITUD_RUTINAS
-EXTERN __LONGITUD_ROM
+EXTERN __LONGITUD_TABLA_DIGITOS
+EXTERN __LONGITUD_TEXT_TAREA_1
 EXTERN __LONGITUD_DATOS
 EXTERN __LONGITUD_BSS
-EXTERN __LONGITUD_TEXT_TAREA_1
-EXTERN __LONGITUD_TABLA_DIGITOS
-EXTERN _BUFFER_VIDEO
+EXTERN __LONGITUD_RUTINAS
+EXTERN __LONGITUD_NUCLEO
+EXTERN __LONGITUD_INIT
 
+EXTERN __DIR_LINEAL_VIDEO
 EXTERN __SIZE_PILA
 EXTERN __INICIO_PILA
-
-
-;+------------------------------------------------------------------------------------------+
-;| Direcciones a paginar        Longitud                                                    |
-;|------------------------------------------------------------------------------------------+
-;| .ISR0          0x00000000  - 0x0000000c5 ---> 1  PAG  ---> DIR 000  ---> TAB 000         |
-;| BUFFER_VIDEO   0x000b8000  - 0x000001000 ---> 1  PAG  ---> DIR 000  ---> TAB 0B8         |
-;| .sys_tables    0x00100000  - 0x000000134 ---> 1  PAG  ---> DIR 000  ---> TAB 100         | 
-;| .page_tables   0x00110000  - 0x000001000 ---> 1  PAG  ---> DIR 000  ---> TAB 0 -         |
-;| .tabla_digitos 0x00310000  - 0x000010000 ---> 16 PAG  ---> DIR 000  ---> TAB 310 - 320   |
-;| .nucleo        0x00400000  - 0x000000189 ---> 1  PAG  ---> DIR 001  ---> TAB 000         | 
-;| .text_tarea_1  0x00420000  - 0x00000003e ---> 1  PAG  ---> DIR 001  ---> TAB 020         | 
-;| .datos         0x004E0000  - 0x000000058 ---> 1  PAG  ---> DIR 001  ---> TAB 0E0         | 
-;| .rutinas       0x00F00000  - 0x0000001f4 ---> 1  PAG  ---> DIR 003  ---> TAB 300         |
-;|  pila          0x1FFFB000  - 0x000003000 ---> 3  PAG  ---> DIR 07F  ---> TAB 3FB - 3FD   |
-;| .rom           0xFFFF0000  - 0x000002000 ---> 2  PAG  ---> DIR 3FF  ---> TAB 3F0 - 3F2   |
-;+------------------------------------------------------------------------------------------+
 
 
 section .rutinas
 USE32
 
   PAGINACION_INIT:
-  mov ecx, 0x0
-  
-  push  ecx  
+
   push  __INICIO_RAM_PAGE_TABLES
   push  0x03
   push  0x03
   push  __LONGITUD_ISR
+  push  __DIR_FISICA_ISR
   push  __INICIO_RAM_ISR
-  push  __INICIO_RAM_ISR
+  
 
   call PAGINACION
 
@@ -68,15 +66,13 @@ USE32
   pop eax
   pop eax
   pop eax
-  pop ecx
 
 
-  push  ecx
   push  __INICIO_RAM_PAGE_TABLES
   push  0x03
   push  0x03
   push  __LONGITUD_SYS_TABLES
-  push  __INICIO_RAM_SYS_TABLES
+  push  __DIR_FISICA_SYS_TABLES
   push  __INICIO_RAM_SYS_TABLES
 
   call PAGINACION
@@ -87,15 +83,13 @@ USE32
   pop eax
   pop eax
   pop eax
-  pop ecx
 
 
-  push  ecx
   push  __INICIO_RAM_PAGE_TABLES
   push  0x03
   push  0x03
-  push  __LONGITUD_ROM
-  push  __INICIO_RAM_NUCLEO
+  push  __LONGITUD_NUCLEO
+  push  __DIR_FISICA_NUCLEO
   push  __INICIO_RAM_NUCLEO
 
   call PAGINACION
@@ -106,14 +100,12 @@ USE32
   pop eax
   pop eax
   pop eax
-  pop ecx
 
-  push  ecx
   push  __INICIO_RAM_PAGE_TABLES
   push  0x03
   push  0x03
   push  __LONGITUD_TEXT_TAREA_1
-  push  __INICIO_RAM_TEXT_TAREA_1
+  push  __DIR_FISICA_TEXT_TAREA_1
   push  __INICIO_RAM_TEXT_TAREA_1
 
   call PAGINACION
@@ -124,15 +116,13 @@ USE32
   pop eax
   pop eax
   pop eax
-  pop ecx
 
 
-  push  ecx
   push  __INICIO_RAM_PAGE_TABLES
   push  0x03
   push  0x03
   push  __LONGITUD_DATOS
-  push  __INICIO_RAM_DATOS
+  push  __DIR_FISICA_DATOS
   push  __INICIO_RAM_DATOS
 
   call PAGINACION
@@ -143,15 +133,13 @@ USE32
   pop eax
   pop eax
   pop eax
-  pop ecx
 
 
-  push  ecx
   push  __INICIO_RAM_PAGE_TABLES
   push  0x03
   push  0x03
   push  __LONGITUD_BSS
-  push  __INICIO_RAM_BSS
+  push  __DIR_FISICA_BSS
   push  __INICIO_RAM_BSS
 
   call PAGINACION
@@ -162,15 +150,14 @@ USE32
   pop eax
   pop eax
   pop eax
-  pop ecx
 
 
-  push  ecx
+
   push  __INICIO_RAM_PAGE_TABLES
   push  0x03
   push  0x03
   push  __LONGITUD_RUTINAS
-  push  __INICIO_RAM_RUTINAS
+  push  __DIR_FISICA_RUTINAS
   push  __INICIO_RAM_RUTINAS
 
   call PAGINACION
@@ -181,15 +168,13 @@ USE32
   pop eax
   pop eax
   pop eax
-  pop ecx
 
 
-  push  ecx
   push  __INICIO_RAM_PAGE_TABLES
   push  0x03
   push  0x03
   push  __LONGITUD_TABLA_DIGITOS
-  push  __INICIO_RAM_TABLA_DIGITOS
+  push  __DIR_FISICA_TABLA_DIGITOS
   push  __INICIO_RAM_TABLA_DIGITOS
 
   call PAGINACION
@@ -200,16 +185,14 @@ USE32
   pop eax
   pop eax
   pop eax
-  pop ecx
 
 
-  push  ecx
   push  __INICIO_RAM_PAGE_TABLES
   push  0x03
   push  0x03
   push  0x1000
-  push  _BUFFER_VIDEO
-  push  _BUFFER_VIDEO
+  push  __DIR_FISICA_VIDEO
+  push  __DIR_LINEAL_VIDEO
 
   call PAGINACION
 
@@ -219,11 +202,9 @@ USE32
   pop eax
   pop eax
   pop eax
-  pop ecx
 
 
 
-  push  ecx
   push  __INICIO_RAM_PAGE_TABLES
   push  0x03
   push  0x03
@@ -239,16 +220,16 @@ USE32
   pop eax
   pop eax
   pop eax
-  pop ecx
 
 
 
-  push  ecx
+
+
   push  __INICIO_RAM_PAGE_TABLES
   push  0x03
   push  0x03
   push  0x6000
-  push  __INICIO_RAM_PAGE_TABLES
+  push  __DIR_FISICA_PAGE_TABLES
   push  __INICIO_RAM_PAGE_TABLES
 
   call PAGINACION
@@ -259,13 +240,9 @@ USE32
   pop eax
   pop eax
   pop eax
-  pop ecx
 
 
 
- xchg bx, bx
-
-  push  ecx
   push  __INICIO_RAM_PAGE_TABLES
   push  0x03
   push  0x03
@@ -281,7 +258,7 @@ USE32
   pop eax
   pop eax
   pop eax
-  pop ecx
+
 
 
 
@@ -297,9 +274,9 @@ PAGINACION:
 mov ebp, esp  
 mov esi,[ebp + 4]  ; Cargo direccion lineal
 mov edi,[ebp + 8]  ; Cargo direccion fisica
+mov edx,[ebp + 16]   
 mov ecx,[ebp + 12] ; Cargo longitud de la seccion a paginar
 mov eax,[ebp + 24] ; Cargo direccion del DIRECTORIO
-mov ebx,[ebp + 28] ; Cargo contador de tablas ya paginadas
 
  
 DIRECTORIO:   ;Puntero a tabla:  __INICIO_RAM_PAGE_TABLES + (contador+1) * 0x1000  + ATRIBUTOS_DIRECTORIO
@@ -310,10 +287,10 @@ and esi, 0x3FF
 mov ebx, dword [eax + esi * 4] ; Compruebo si ya existe un valor de tabla para el DIRECTORIO correspondiente
 cmp ebx, 0x0
 jnz TABLA                      ; Si existe, salto al cargado de entradas de la TABLA de paginas
-
-mov eax,[ebp + 28]        ; Cargo el valor de la ultima TABLA usada
-inc eax                   ; Incremento una nueva TABLA
-mov [ebp + 28],eax        ; Guardo el valor incrementado en la pila nuevamente
+;xchg bx ,bx
+mov eax,[_CONTADOR_TABLAS_PAGINAS]  ; Cargo el valor de la ultima TABLA usada
+inc eax                             ; Incremento una nueva TABLA
+mov [_CONTADOR_TABLAS_PAGINAS] ,eax ; Guardo el valor incrementado en la pila nuevamente
 
 mov ebx, eax
 mov eax,[ebp + 24]        ; Cargo direccion del DIRECTORIO
@@ -331,7 +308,7 @@ mov esi,[ebp + 4]        ; Cargo la direccion lineal nuevamente
 shr esi, 12              ; Obtengo entrada de tabla de pagina
 and esi, 0x3FF
 
-sub ebx,edx              ; Resto los ATRIBUTOS_DIRECTORIO para poder cargarle los de TABLA luego
+and ebx, 0xFFFFF000      ; Resto los ATRIBUTOS_DIRECTORIO para poder cargarle los de TABLA luego
 
 
 
