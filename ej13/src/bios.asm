@@ -111,8 +111,8 @@ GLOBAL _FALLO_PAGINA_NUMERO
 GLOBAL _CONTADOR_TABLAS_PAGINAS
 GLOBAL _flag_int_timer
 GLOBAL _CONTADOR_PAGINAS_NO_PRESENTES
-GLOBAL _CONTADOR_TAREA_0
 GLOBAL _CONTADOR_TAREA_1
+GLOBAL _CONTADOR_TAREA_2
 
 
 EXTERN COPY_INIT
@@ -148,24 +148,6 @@ EXTERN MOSTRAR_PANTALLA
 EXTERN BUFFER_DOBLE_OFFS
 EXTERN PAGINACION_INIT
 ;----------------------------------------------------------------------------------
-%define TECLA_0  0x0B
-%define TECLA_1  0x02
-%define TECLA_2  0x03
-%define TECLA_3  0x04
-%define TECLA_4  0x05
-%define TECLA_5  0x06
-%define TECLA_6  0x07
-%define TECLA_7  0x08
-%define TECLA_8  0x09
-%define TECLA_9  0x0A
-%define TECLA_A  0x1E
-%define TECLA_B  0x30
-%define TECLA_C  0x2E
-%define TECLA_D  0x20
-%define TECLA_E  0x12
-%define TECLA_F  0x21
-%define TECLA_ENTER  0x1C
-
 
 %define BKP xchg bx,bx
 
@@ -277,7 +259,7 @@ nucleos:
   pop eax
   pop eax
 
-BKP
+
 
   push __INICIO_ROM_SYS_TABLES
   push __DIR_FISICA_SYS_TABLES
@@ -290,7 +272,7 @@ BKP
   pop eax
 
 
-BKP
+
   push __INICIO_ROM_DATOS
   push __DIR_FISICA_DATOS
   push __LONGITUD_DATOS
@@ -302,7 +284,7 @@ BKP
   pop eax
 
 
-  BKP
+  
   push __INICIO_ROM_TEXT_TAREA_0
   push __DIR_FISICA_TEXT_TAREA_0
   push __LONGITUD_TEXT_TAREA_0
@@ -335,7 +317,7 @@ BKP
   pop eax
   pop eax
 
-BKP
+
   push  __INICIO_ROM_TSS_TAREA_0
   push __DIR_FISICA_TSS_TAREA_0
   push __LONGITUD_TSS_TAREA_0
@@ -346,7 +328,7 @@ BKP
   pop eax
   pop eax
 
-BKP
+
   push  __INICIO_ROM_TSS_TAREA_1
   push __DIR_FISICA_TSS_TAREA_1
   push __LONGITUD_TSS_TAREA_1
@@ -356,6 +338,7 @@ BKP
   pop eax
   pop eax
   pop eax
+
 
 
   push __INICIO_ROM_TSS_TAREA_2
@@ -368,7 +351,6 @@ BKP
   pop eax
   pop eax
 
-BKP
 
 
 lgdt [cs:img_gdtr_32] 
@@ -382,17 +364,14 @@ mov esp, __FIN_PILA_NUCLEO_TAREA_0
 mov ebp, __INICIO_PILA_NUCLEO_TAREA_0
 
 BKP
-mov eax, __DIR_FISICA_PAGE_TABLES_0
-mov cr3,eax                        ;Apuntar a directorio de paginas.
-mov eax,cr0                        ;Activar paginacion encendiendo el
-or eax,0x80000000                  ;bit 31 de CR0.
+mov eax, __DIR_FISICA_PAGE_TABLES_0   ; La tarea inicial va arrancar en el DIRECTORIO 0
+mov cr3,eax                           ; Apuntar a directorio de paginas.
+mov eax,cr0                           ; Activar paginacion encendiendo el
+or eax,0x80000000                     ; bit 31 de CR0.
 mov cr0,eax
 
 sti
 jmp TAREA_0
-
-
-
 
 
 
@@ -403,6 +382,7 @@ jmp TAREA_0
 
 section .datos 
 _ENTRADA_TABLA: dq __INICIO_RAM_TABLA_DIGITOS + 0x10 ; Puntero a la primera entrada de tabla libre
+_CONTADOR_TAREA_2: dq 0x05
 
 
 section .bss nobits
@@ -417,8 +397,8 @@ _CONTADOR_TIMER_2: resq 1        ; Contador de interrupciones del PIT cada 100ms
 _NUMERO_TOTAL : resq 2           ; Suma total de los numeros cargados en la TABLA_DIGITOS
 _FALLO_PAGINA_NUMERO: resq 1     ; Direccion de la pagina que falla CR2
 _CONTADOR_PAGINAS_NO_PRESENTES: resq 1 ; Contador de paginas no presentes que ya fueron paginadas
-_CONTADOR_TAREA_0: resq 1
 _CONTADOR_TAREA_1: resq 1
+;_CONTADOR_TAREA_2: resq 1
 _CONTADOR_TABLAS_PAGINAS: resq 1 ; Contardor de cantidad de tablas de paginas ya creadas
 _BUFFER_NUMERO_PANTALLA: resq 1  ; Numero en ascii a cargar en la seccion de VIDEO
 

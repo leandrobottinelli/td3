@@ -97,7 +97,7 @@ USE32
   PAGINACION_DIRECTORIO_0:
 
   push __DIR_FISICA_PAGE_TABLES_0
-  call PAGINACION_DIRECTORIO_N 
+  call PAGINACION_DIRECTORIO_N            ; Paginacion de las paginas de kernel para el directorio 0
   pop eax
 
 
@@ -116,6 +116,8 @@ USE32
   pop eax
   pop eax
   pop eax
+
+
 
   push  __DIR_FISICA_PAGE_TABLES_0
   push  0x03
@@ -174,7 +176,7 @@ USE32
   PAGINACION_DIRECTORIO_1:
 
   push __DIR_FISICA_PAGE_TABLES_1
-  call PAGINACION_DIRECTORIO_N
+  call PAGINACION_DIRECTORIO_N                    ; Paginacion de las paginas de kernel para el directorio 1
   pop eax
 
   push  __DIR_FISICA_PAGE_TABLES_1
@@ -252,7 +254,7 @@ USE32
   PAGINACION_DIRECTORIO_2:
 
   push __DIR_FISICA_PAGE_TABLES_2
-  call PAGINACION_DIRECTORIO_N
+  call PAGINACION_DIRECTORIO_N                            ; Paginacion de las paginas de kernel para el directorio 2
   pop eax
 
   push  __DIR_FISICA_PAGE_TABLES_2
@@ -332,11 +334,11 @@ USE32
 ;---------------------------------------------------------------------------------------------------------------------
 ;---------------------------------------------------------------------------------------------------------------------
 
-  PAGINACION_DIRECTORIO_N:
+  PAGINACION_DIRECTORIO_N:     ; Paginacion de las paginas de kernel para el directorio correspondiente
 
   mov ebp, esp  
 
-  mov eax, [ebp + 4]  
+  mov eax, [ebp + 4]           ; Cargo en eax la direccion del directorio a paginar que esta en la pila
 
   push  eax
   push  0x03
@@ -358,7 +360,7 @@ USE32
 
 
   mov ebp, esp  
-  mov eax, [ebp + 4]  
+  mov eax, [ebp + 4]           ; Cargo en eax la direccion del directorio a paginar que esta en la pila
   
   push  eax
   push  0x03
@@ -379,7 +381,7 @@ USE32
 
 
   mov ebp, esp  
-  mov eax, [ebp + 4]  
+  mov eax, [ebp + 4]            ; Cargo en eax la direccion del directorio a paginar que esta en la pila
 
   push  eax
   push  0x03
@@ -400,7 +402,7 @@ USE32
 
 
   mov ebp, esp  
-  mov eax, [ebp + 4]  
+  mov eax, [ebp + 4]             ; Cargo en eax la direccion del directorio a paginar que esta en la pila
 
   push  eax
   push  0x03
@@ -421,7 +423,7 @@ USE32
 
 
   mov ebp, esp  
-  mov eax, [ebp + 4]  
+  mov eax, [ebp + 4]            ; Cargo en eax la direccion del directorio a paginar que esta en la pila
 
   push  eax
   push  0x03
@@ -442,7 +444,7 @@ USE32
 
 
   mov ebp, esp  
-  mov eax, [ebp + 4]  
+  mov eax, [ebp + 4]             ; Cargo en eax la direccion del directorio a paginar que esta en la pila
 
   push  eax
   push  0x03
@@ -461,7 +463,7 @@ USE32
   pop eax
 
   mov ebp, esp  
-  mov eax, [ebp + 4]  
+  mov eax, [ebp + 4]              ; Cargo en eax la direccion del directorio a paginar que esta en la pila
 
   push  eax
   push  0x03
@@ -480,7 +482,7 @@ USE32
   pop eax
 
   mov ebp, esp  
-  mov eax, [ebp + 4]  
+  mov eax, [ebp + 4]               ; Cargo en eax la direccion del directorio a paginar que esta en la pila
 
   push  eax
   push  0x03
@@ -499,7 +501,7 @@ USE32
   pop eax
 
   mov ebp, esp  
-  mov eax, [ebp + 4]  
+  mov eax, [ebp + 4]               ; Cargo en eax la direccion del directorio a paginar que esta en la pila
 
   push  eax
   push  0x03
@@ -524,7 +526,7 @@ USE32
   push  eax
   push  0x03
   push  0x03
-  push  0xF000                ;VER CANTIDAD
+  push  0xF000                   ; Dejo 15 tablas de paginacion por directorio paginadas
   push  eax
   push  eax
 
@@ -538,7 +540,7 @@ USE32
   pop eax
 
   mov ebp, esp  
-  mov eax, [ebp + 4]  
+  mov eax, [ebp + 4]             ; Cargo en eax la direccion del directorio a paginar que esta en la pila
 
   push  eax
   push  0x03

@@ -41,11 +41,8 @@ EXTERN _TSS_0_ds
 EXTERN _TSS_0_es
 EXTERN _TSS_0_ss
 
-;GLOBAL POLLING
 GLOBAL LECTURA_TECLA
 EXTERN __INICIO_RAM_TECLADO_RUTINA
-EXTERN _flag_int_teclado
-EXTERN _flag_int_timer
 EXTERN MOSTRAR_PANTALLA
 EXTERN _FALLO_PAGINA_NUMERO
 EXTERN __INICIO_RAM_PAGE_TABLES
@@ -112,16 +109,6 @@ bt ax, 0x7                             ; Me fijo si la tecla fue presionada o so
 ;xchg bx,bx
 ret
 
-
-;jmp CARGADO_TABLA
-
-
-;CARGADO_TABLA:
-
-;push ax
-;call CARGAR_TABLA
-;pop ax
-;ret
 
 
 ;///////////////////////////////////////////////////////////////////////////////////////////////////////////////////;///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -237,7 +224,7 @@ isr32_handler_PIT:
    ;xchg bx, bx
 
   push eax
-  mov al,0x20                         ; Codigo para avisar al PIC que atendi la int 
+  mov al,0x20                          ; Codigo para avisar al PIC que atendi la int 
   out 0x20,al
   mov eax, cr3
   mov [_TAREA_ACTUAL], eax
@@ -260,15 +247,15 @@ isr32_handler_PIT:
 
 
   ;xchg bx, bx
-  inc BYTE[CONTADOR_SCHEDULER]
-  ;inc BYTE[CONTADOR_SCHEDULER_2]
+  inc BYTE[_CONTADOR_TAREA_1]
+  inc BYTE[_CONTADOR_TAREA_2]
 
   ;BKP
-  cmp BYTE[CONTADOR_SCHEDULER], 0x02
+  cmp BYTE[_CONTADOR_TAREA_1], 0x0A
   mov dword[_TAREA_FUTURA], __DIR_FISICA_PAGE_TABLES_1
   je VALIDACION_CAMBIO_TAREA
 
-  cmp BYTE[CONTADOR_SCHEDULER], 0x03
+  cmp BYTE[_CONTADOR_TAREA_2], 0x19
   mov dword[_TAREA_FUTURA], __DIR_FISICA_PAGE_TABLES_2
   je VALIDACION_CAMBIO_TAREA
   
@@ -329,6 +316,8 @@ isr32_handler_PIT:
    mov eax, [_TAREA_FUTURA]
    mov dword[_TAREA_ACTUAL], eax
    mov cr3, eax
+   mov BYTE[_CONTADOR_TAREA_1], 0x00
+
    jmp CARGANDO
    je FIN2
 
@@ -340,7 +329,8 @@ isr32_handler_PIT:
    mov eax, [_TAREA_FUTURA]
    mov dword[_TAREA_ACTUAL], eax
    mov cr3, eax
-   mov BYTE[CONTADOR_SCHEDULER], 0x00
+   mov BYTE[_CONTADOR_TAREA_2], 0x05
+
    jmp CARGANDO
    je FIN2
 
@@ -385,59 +375,9 @@ iret
 isr33_handler_KEYBOARD:
 
    pushad
-   ;mov ax, 0x1
-   ;mov [_flag_int_teclado],ax                      ; Flag para saber que interrumpio el teclado
-   
-   mov al,0x20                                     ; Codigo para avisar al PIC que atendi la int 
-
+ 
+   mov al,0x20                              ; Codigo para avisar al PIC que atendi la int 
    out 0x20,al
-
-
-
-
-WHILE:
-      
-      ;mov ax,[_flag_int_timer]          ; Me fijo si vencio timer
-      ;cmp ax, 0x01      
-      ;jz Cien_ms
-
-   ;   mov bx, [_flag_int_teclado]       ; Me fijo si hubo tecla
-    ;  cmp bx, 0x01
-    ;  jz INT_TECLA
-    ;  jmp WHILE
-
-  ;Cien_ms:
-   ;   mov ax,0x00
-    ;  mov [_flag_int_timer], ax         ; Reinicio el flag de timer
-
-     ; mov ax, [_CONTADOR_TIMER]         
-     ; cmp ax, 0x0A                      ; Me fijo si el timer vencio 10 veces 
-     ; jz VENCE_TIMER
-
-      ; mov eax,[_CONTADOR_TIMER]         ; Guardo cada 10 veces la base de tiempo
-      ; inc eax 
-      ; mov [_CONTADOR_TIMER], eax
-      ; jmp WHILE
-
-  ;VENCE_TIMER:
-
-   ; mov ax, 0x0
-   ; mov [_CONTADOR_TIMER], ax
-    
-   ; mov eax,[_CONTADOR_TIMER_2]
-   ; inc eax
-   ; mov [_CONTADOR_TIMER_2], eax
-
-   ; push 0x20                           ; Guardo el valor de COLUMNAS  
-   ; push 0x500                          ; Guardo el valor de FILAS
-   ; push _NUMERO_TOTAL
-   ; call MOSTRAR_PANTALLA               ; Muestro en pantalla el numero cada 10 veces que vence 10ms(base de tiempo)
-   ; pop eax
-   ; pop eax
-    ;pop eax
-
-    
-    ;JMP WHILE
 
 
   INT_TECLA:
@@ -530,57 +470,35 @@ WHILE:
       jz FIN
 
 
-  jmp SIGUIENTE
+  jmp RESET
 
 
     GUARDADO_HEXA:
-    ;BKP
     push bx
     call CARGAR_TABLA
     pop bx
-    jmp SIGUIENTE
-
-    SIGUIENTE:
-  ; BKP
-
-;      mov ax, 0x0
-;      mov [_flag_int_teclado], ax
-;      sti
     jmp RESET
-
-
-
 
 
     FIN:
       
-      cmp byte[_CONTADOR_TECLAS],0x0  ;Me fijo si estoy parado en la primer pocision del vector
+      cmp byte[_CONTADOR_TECLAS],0x0   ; Me fijo si estoy parado en la primer pocision del vector
       jz CASO_TECLA_ENTER_SOLA
       JMP CASO_NORMAL
 
 
       CASO_TECLA_ENTER_SOLA:
-      cmp byte[_flag_16_TECLAS],0x0    ;Me fijo si la cantidad de teclas fue  realmente 0 o multiplo de 16
-      jz RESET                         ;Si fue 0, es porque solo se presiono la tecla ENTER
+      cmp byte[_flag_16_TECLAS],0x0    ; Me fijo si la cantidad de teclas fue  realmente 0 o multiplo de 16
+      jz RESET                         ; Si fue 0, es porque solo se presiono la tecla ENTER
 
       CASO_NORMAL:
-      BKP
       call CARGAR_TABLA_2
       
-      ;mov [_NUMERO_TOTAL], eax
-      ;call TAREA_0
 
-      RESET:
-     ; mov ax, 0x0
-     ; mov [_flag_int_teclado], ax     ;Reinicio flag de teclado 
-     ; sti                             ;Habilito interrupciones nuevamente
+ RESET:
 
-
-
-popad
-;sti
-;BKP
-iret
+ popad
+ iret
 
 CONTADOR_SCHEDULER: resq 1
 _TAREA_ACTUAL: resq 1

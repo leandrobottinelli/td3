@@ -28,7 +28,6 @@ USE32
 
 TAREA_0:
    hlt
-  ; xchg bx,bx
    mov eax, 0x00
    jmp TAREA_0
 

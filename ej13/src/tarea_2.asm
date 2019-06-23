@@ -35,10 +35,6 @@ USE32
 
 TAREA_2:
 
-    hlt
-    mov eax, 0x03
-    jmp TAREA_2
-
     mov eax, 0x00
     mov edx, __INICIO_RAM_TABLA_DIGITOS + 0x10  ; Comienzo desde lel primero numero de la tabla
     mov [_NUMERO_TOTAL], eax                    ; Pongo en cero la parte baja de la suma total
@@ -47,7 +43,7 @@ TAREA_2:
 
     LP:
     cmp edx, [_ENTRADA_TABLA]                   ; Chequeo si el puntero es siguiente numero de la tabla a cargar 
-    jz RESULTADO                                ; Dejo de sumar y vuelvo
+    jz FIN                                ; Dejo de sumar y vuelvo
     mov eax,[edx]                            
     add [_NUMERO_TOTAL], eax                    ; Sumo la parte baja del numero nuevo al total
     mov eax,[edx+0x04]                          ; Copio la parte alta del numero nuevo
@@ -66,12 +62,6 @@ TAREA_2:
     add edx , 0x10                              ; Corro el puntero al siguiente numero de la tabla
 
     jmp LP
-
-    RESULTADO:
-    ;mov eax,[_NUMERO_TOTAL]                     
-    ;cmp eax, 0x20000000                         ; Comparo contra el numero de 512MB
-    ;jge FIN                                     ; Si es mayor o igual finalizo
-    ;mov eax,[eax]                               ; Si es menor intento leer esa direccion
 
     FIN:
     hlt
