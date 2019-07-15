@@ -41,6 +41,7 @@ EXTERN _TSS_0_cs
 EXTERN _TSS_0_ds
 EXTERN _TSS_0_es
 EXTERN _TSS_0_ss
+EXTERN _TSS_0_simd            
 
 GLOBAL LECTURA_TECLA
 EXTERN __INICIO_RAM_TECLADO_RUTINA
@@ -165,8 +166,13 @@ isr6_handler_UD:
 
 
 isr7_handler_NM:
+ ;  xchg bx, bx
    mov edx, 7
-   jmp default_isr
+   pushad
+   clts
+   fxrstor[_TSS_0_simd]
+   popad
+   iret
 
 
 isr8_handler_DF:
@@ -199,8 +205,60 @@ isr13_handler_GP:
 
 
 isr14_handler_PF:
-   mov edx, 14
-   xchg bx,bx
+;   pushad
+; 
+;   mov dx, [esp + 32]             ; Copio de la pila el codigo de error de pagina
+;   cmp dx, 0x0                    ; Comparo contra cero, supervisor trato de leer pagina no presente
+;   jnz PRESENTE                   ; En los demas casos, salto la paginacion
+;
+;
+;   mov edx, 14
+;   mov eax,cr2                    ; Guardo el numero de la pagina que fallo
+;   mov [_FALLO_PAGINA_NUMERO],eax ; Guardo el numero de la pagina que fallo en memoria para mostrarlo en pantalla
+;
+;   push 0x60                      ; Guardo el valor de COLUMNAS  
+;   push 0x500                     ; Guardo el valor de FILAS
+;   push _FALLO_PAGINA_NUMERO      ; Guardo el numero de la pagina que fallo
+;   call MOSTRAR_PANTALLA           
+;   pop eax
+;   pop eax
+;   pop eax
+;
+;
+;   mov eax,cr2                    ; Miro que pagina fallo
+;   invlpg [eax]                   ; Invalido la pagina que fallo antes de regresar
+;
+;
+;   mov ebx, __DIR_FISICA_PAGINAS_NO_PRESENTES ; Cargo la direccion donde voy a paginar las paginas no paginadas
+;   mov ecx,[ _CONTADOR_PAGINAS_NO_PRESENTES]  ; Cargo valor del contador de las paginas no presentes, ya paginadas anteriormente 
+;   shl ecx, 12                                ; Multiplico por 0x1000 el contador 
+;   add ebx, ecx                               ; A la direccion fisica de base, le agrego un multiplo de 0x1000
+;                                              ; para la nueva direccion fisica, de la pagina no presente a paginar
+;
+;
+;   push  __INICIO_RAM_PAGE_TABLES
+;   push  0x03
+;   push  0x03
+;   push  0x1000
+;   push  ebx                                  ; Direccion fisca que propone la guia a partir de 0x08000000 
+;   push  eax                                  ; Direccion lineal que fallo y quiero paginar
+;
+;   call PAGINACION
+;
+;   pop eax
+;   pop eax
+;   pop eax
+;   pop eax
+;   pop eax
+;   pop eax
+;
+;   inc dword[ _CONTADOR_PAGINAS_NO_PRESENTES] ; Incremento contador para que las paginas queden cada 0x1000
+;
+;   PRESENTE:
+;   popad
+;   
+;   add esp, 4                                 ; Sacar codigo de excepccion de la pila 
+;   iret
    jmp default_isr
 
 
@@ -291,6 +349,15 @@ isr32_handler_PIT:
 
    mov dword [_TSS_0_ebp], ebp
 
+   mov eax, cr0
+   and eax, 0x08
+   cmp eax, 0x08  
+   je GUARDADO_SIMD
+   jmp CONSULTAR_GUARDADO_TAREA_USUARIO
+
+   GUARDADO_SIMD:
+   fxsave[_TSS_0_simd] 
+
 
    CONSULTAR_GUARDADO_TAREA_USUARIO:
 
@@ -314,13 +381,19 @@ isr32_handler_PIT:
 
 
 
+
    CAMBIO_TAREA_0:
    ;xchg bx, bx
    cmp dword[_TAREA_FUTURA], __DIR_FISICA_PAGE_TABLES_0
    jne CAMBIO_TAREA_1
    mov eax, [_TAREA_FUTURA]
    mov dword[_TAREA_ACTUAL], eax
+   ; xchg bx, bx
    mov cr3, eax
+
+   mov eax, cr0
+   or eax, 0x8							  ; Poner en 1 el bit Task Switched para SIMD
+   mov cr0, eax
    jmp CONSULTAR_CARGADO_TAREA_USUARIO
    je FIN2
 
@@ -331,7 +404,12 @@ isr32_handler_PIT:
    jne CAMBIO_TAREA_2
    mov eax, [_TAREA_FUTURA]
    mov dword[_TAREA_ACTUAL], eax
+     ; xchg bx, bx
    mov cr3, eax
+
+   mov eax, cr0
+   or eax, 0x8							  ; Poner en 1 el bit Task Switched para SIMD
+   mov cr0, eax
    mov BYTE[_CONTADOR_TAREA_1], 0x00
 
    jmp CONSULTAR_CARGADO_TAREA_USUARIO
@@ -339,12 +417,14 @@ isr32_handler_PIT:
 
 
    CAMBIO_TAREA_2:
-   ;xchg bx, bx
    cmp dword[_TAREA_FUTURA], __DIR_FISICA_PAGE_TABLES_2 ; Esta comparacion no haria falta, si llega aca
    jne FIN2                                             ; es porque es la tarea 2
    mov eax, [_TAREA_FUTURA]
    mov dword[_TAREA_ACTUAL], eax
    mov cr3, eax
+   mov eax, cr0
+   or eax, 0x8							  ; Poner en 1 el bit Task Switched para SIMD
+   mov cr0, eax
    mov BYTE[_CONTADOR_TAREA_2], _OFFSET_TAREAS
 
    jmp CONSULTAR_CARGADO_TAREA_USUARIO

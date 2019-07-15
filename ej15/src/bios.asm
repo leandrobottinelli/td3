@@ -100,7 +100,7 @@ EXTERN __DIR_FISICA_TSS_TAREA_2
 EXTERN __DIR_FISICA_PAGE_TABLES_0
 EXTERN __DIR_FISICA_PAGE_TABLES_1
 EXTERN __DIR_FISICA_PAGE_TABLES_2
-;----------------------------------------------------------------------------------
+;---------------------------------------------------------------------------------------------------
 
 GLOBAL _CONTADOR_TECLAS
 GLOBAL _ENTRADA_TABLA
@@ -150,11 +150,11 @@ EXTERN pantalla_init
 EXTERN MOSTRAR_PANTALLA
 EXTERN BUFFER_DOBLE_OFFS
 EXTERN PAGINACION_INIT
-;----------------------------------------------------------------------------------
+;------------------------------------------------------------------------------------------------------------
 
 %define BKP xchg bx,bx
 
-;----------------------------------------------------------------------------------
+;------------------------------------------------------------------------------------------------------------
 
 section .reset
 arranque:
@@ -240,7 +240,7 @@ modo_proteg:
 
   jmp nucleos
  
- ;------------------------------------------------------------------------------------------------------------
+;------------------------------------------------------------------------------------------------------------
 
 section .nucleo
 
@@ -292,7 +292,7 @@ nucleos:
   push __DIR_FISICA_TEXT_TAREA_0
   push __LONGITUD_TEXT_TAREA_0
 
-  call COPY_INIT                        ; Copio la tarea_1 a (RAM)
+  call COPY_INIT                        ; Copio el codigo de la tarea_0 a RAM
     
   pop eax
   pop eax
@@ -303,7 +303,7 @@ nucleos:
   push __DIR_FISICA_TEXT_TAREA_1
   push __LONGITUD_TEXT_TAREA_1
 
-  call COPY_INIT                        ; Copio la tarea_1 a (RAM)
+  call COPY_INIT                        ; Copio el codigo de la tarea_1 a RAM
     
   pop eax
   pop eax
@@ -314,7 +314,7 @@ nucleos:
   push __DIR_FISICA_TEXT_TAREA_2
   push __LONGITUD_TEXT_TAREA_2
 
-  call COPY_INIT                        ; Copio la tarea_1 a (RAM)
+  call COPY_INIT                        ; Copio el codigo de la tarea_2 a RAM
     
   pop eax
   pop eax
@@ -325,7 +325,7 @@ nucleos:
   push __DIR_FISICA_TSS_TAREA_0
   push __LONGITUD_TSS_TAREA_0
 
-  call COPY_INIT                        ; Copio la tarea_1 a (RAM)
+  call COPY_INIT                        ; Copio la TSS de tarea_0 a RAM
     
   pop eax
   pop eax
@@ -336,7 +336,7 @@ nucleos:
   push __DIR_FISICA_TSS_TAREA_1
   push __LONGITUD_TSS_TAREA_1
 
-  call COPY_INIT                       ; Copio la tarea_1 a (RAM)
+  call COPY_INIT                        ; Copio la TSS de tarea_1 a RAM
     
   pop eax
   pop eax
@@ -348,12 +348,13 @@ nucleos:
   push __DIR_FISICA_TSS_TAREA_2
   push __LONGITUD_TSS_TAREA_2
 
-  call COPY_INIT                      ; Copio la tarea_1 a (RAM)
+  call COPY_INIT                        ; Copio la TSS de tarea_2 a RAM
     
   pop eax
   pop eax
   pop eax
 
+;--------------------------------------------------------------------------------------------------------------
 BKP
 
 
@@ -376,6 +377,16 @@ mov cr3,eax                           ; Apuntar a directorio de paginas.
 mov eax,cr0                           ; Activar paginacion encendiendo el
 or eax,0x80000000                     ; bit 31 de CR0.
 mov cr0,eax
+
+
+mov eax, cr0
+and eax, 0xFFFFFFFB					  ; Poner en 0 el bit Emulation para SIMD
+or eax, 0x8							  ; Poner en 1 el bit Task Switched para SIMD
+mov cr0, eax
+
+mov eax, cr4
+or eax, 0x600         				  ; Poner en 1 el bit 9 y 10 para SIMD
+mov cr4, eax
 
 sti
 jmp TAREA_0

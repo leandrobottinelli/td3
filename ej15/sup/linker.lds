@@ -11,34 +11,6 @@
 					  DATA Tarea 2     cambiado a 0x00532000 respecto a la guia
 Elegida Opcion B)					
 		
-+-----+------+------------------------------+----------------+----------------+------------------+------------------+-----------+
-| RAM | Task |        Memory region         | Output section | Input sections | Physical Address | 4KB pages |  Logic Address   |
-+-----+------+------------------------------+----------------+----------------+------------------+------------------+-----------+
-| yes |      | ISR                          | isr            | rutina_lectura | 0x0000 0000      |           | 0x0000 0000		|
-|	  |      |                              |                | rutinas_isr    |                  |           |					|
-|     |      | VIDEO                        |                |                | 0x000B 8000      |           | 0x0001 0000   	|
-| yes |      | Tablas de sistema            | systables      | sys_tables     | 0x0010 0000      |           | 0x0010 0000 		|
-|     |      |                              |                |                |                  |			 |					|
-|     |      | Tablas de paginacion         | page_tables    |                | 0x0011 0000      |           | 0x0011 0000  	|
-|     |      | Tabla de digitos             | tabla_digitos  | 				  | 0x0031 0000      |           | 0x0031 0000		|
-| yes |      | Nucleo                       | Nucleo         | 	nucleo        | 0x0040 0000      |           | 0x0040 0000  	|
-|     |      |                              |                | 			      |                  |           |					|
-|     |      |                              |                | 			      |                  |			 |					|
-| yes |  1   | TEXT Tarea 1                 | TEXT_task_1    | TEXT_task_1    | 0x0042 0000      |           | 0x0052 0000    	|
-|     |  1   | BSS Tarea 1                  |                |                | 0x0042 1000      |           | 0x0052 1000   	|
-|     |  1   | DATA Tarea 1                 |                |                | 0x0042 2000      |           | 0x0052 2000   	|
-|     |      | Datos                        | DATA           | datos          | 0x004E 0000      |           | 0x005E 0000   	|
-|     |      | BSS                          | BSS            | BSS            | 0x004F 0000      |           | 0x005F 0000   	|
-|     |      | Pila                         |                |                | 0x1FFF B000      |           | 0x1FFF B000   	|
-|     |  1   | Pila Tarea 1                 |                |                | 0x1FFF E000      |           | 0x0041 3000    	|
-|     |      |                              |                |                |                  |           |					|
-|     |      | Secuencia inicialización ROM | init_code      | init           | 0xFFFF 0000      |           | 0xFFFF 0000  	|
-|     |      |                              |                | 		          |                  |           |					|
-|     |      |                              |                | 		          |                  |           |					|
-|     |      |                              |                | 	              |                  |           |					|
-|     |      |                              |                | 				  |                  |           |					|
-|     |      | Vector de reset              | reset  		 | reset          | 0xFFFF FFF0      |           |					|
-+-----+------+------------------------------+----------------+----------------+------------------+------------------------------+
 */
 
 

@@ -4,7 +4,6 @@ GLOBAL COPY_CICLO
 
 section .copy
 USE32
-; Este copy ya esta en ROM. la podes usar directamente
 COPY_INIT:
 
     mov ebp, esp  

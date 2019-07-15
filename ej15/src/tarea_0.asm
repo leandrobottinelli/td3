@@ -14,7 +14,7 @@ GLOBAL _TSS_0_cs
 GLOBAL _TSS_0_ds
 GLOBAL _TSS_0_es
 GLOBAL _TSS_0_ss
-
+GLOBAL _TSS_0_simd 
 
 EXTERN __FIN_PILA_NUCLEO_TAREA_0
 EXTERN __FIN_PILA_USUARIO_TAREA_0
@@ -28,6 +28,7 @@ section .text_tarea_0
 USE32
 
 TAREA_0:
+;xchg bx, bx
    hlt
    mov eax, 0x00
    jmp TAREA_0
@@ -36,6 +37,7 @@ TAREA_0:
 
 section .tss_tarea_0
 USE32
+ALIGN 16
 
 TSS_TAREA_0:
     _TSS_0_reservado:      resw 2 
@@ -67,6 +69,10 @@ TSS_TAREA_0:
     _TSS_0_reservado_ss:   resw 1
     _TSS_0_ds:             dw ds_sel_32_nucleo
     _TSS_0_reservado_ds:   resw 1
+    _RESERVED:             resb 8
+    _TSS_0_simd:           resb 512
+
+
 
 
 

@@ -17,6 +17,16 @@ USE32
 %define ASCII_TECLA_D 0x44
 %define ASCII_TECLA_E 0x45
 %define ASCII_TECLA_F 0x46
+%define ASCII_TECLA_L 0x4C
+%define ASCII_TECLA_O 0x4F
+%define ASCII_TECLA_R 0x52
+%define ASCII_TECLA_S 0x53
+%define ASCII_TECLA_T 0x54
+%define ASCII_TECLA_U 0x55
+%define ASCII_TECLA_PUNTOS 0x3A
+%define ASCII_TECLA_ESPACIO 0x20
+
+
 %define ASCII_TECLA_0 0x30
 %define ASCII_TECLA_1 0x31
 %define ASCII_TECLA_2 0x32
@@ -169,16 +179,56 @@ USE32
 
       add eax, ebx          ; Guardo el valor de FILAS + COLUMNAS para usarlo en el buffer
 
-      mov byte[__DIR_LINEAL_VIDEO + eax ], ASCII_TECLA_0
-      mov byte[__DIR_LINEAL_VIDEO + eax + 0x01], 0x07  
-      mov byte[__DIR_LINEAL_VIDEO + eax + 0x02], ASCII_TECLA_x
-      mov byte[__DIR_LINEAL_VIDEO + eax + 0x03], 0x07
+      mov byte[__DIR_LINEAL_VIDEO + eax + 0x00], ASCII_TECLA_R
+      mov byte[__DIR_LINEAL_VIDEO + eax + 0x01], 0x04  
+      mov byte[__DIR_LINEAL_VIDEO + eax + 0x02], ASCII_TECLA_E
+      mov byte[__DIR_LINEAL_VIDEO + eax + 0x03], 0x04
+      mov byte[__DIR_LINEAL_VIDEO + eax + 0x04], ASCII_TECLA_S
+      mov byte[__DIR_LINEAL_VIDEO + eax + 0x05], 0x04  
+      mov byte[__DIR_LINEAL_VIDEO + eax + 0x06], ASCII_TECLA_U
+      mov byte[__DIR_LINEAL_VIDEO + eax + 0x07], 0x04
+      mov byte[__DIR_LINEAL_VIDEO + eax + 0x08], ASCII_TECLA_L
+      mov byte[__DIR_LINEAL_VIDEO + eax + 0x09], 0x04  
+      mov byte[__DIR_LINEAL_VIDEO + eax + 0x0A], ASCII_TECLA_T
+      mov byte[__DIR_LINEAL_VIDEO + eax + 0x0B], 0x04
+      mov byte[__DIR_LINEAL_VIDEO + eax + 0x0C], ASCII_TECLA_A
+      mov byte[__DIR_LINEAL_VIDEO + eax + 0x0D], 0x04  
+      mov byte[__DIR_LINEAL_VIDEO + eax + 0x0E], ASCII_TECLA_D
+      mov byte[__DIR_LINEAL_VIDEO + eax + 0x0F], 0x04
+      mov byte[__DIR_LINEAL_VIDEO + eax + 0x10], ASCII_TECLA_O
+      mov byte[__DIR_LINEAL_VIDEO + eax + 0x11], 0x04 
+
+      mov byte[__DIR_LINEAL_VIDEO + eax + 0x12], ASCII_TECLA_ESPACIO
+      mov byte[__DIR_LINEAL_VIDEO + eax + 0x13], 0x04   
+
+      mov byte[__DIR_LINEAL_VIDEO + eax + 0x14], ASCII_TECLA_T
+      mov byte[__DIR_LINEAL_VIDEO + eax + 0x15], 0x04
+      mov byte[__DIR_LINEAL_VIDEO + eax + 0x16], ASCII_TECLA_A
+      mov byte[__DIR_LINEAL_VIDEO + eax + 0x17], 0x04  
+      mov byte[__DIR_LINEAL_VIDEO + eax + 0x18], ASCII_TECLA_R
+      mov byte[__DIR_LINEAL_VIDEO + eax + 0x19], 0x04
+      mov byte[__DIR_LINEAL_VIDEO + eax + 0x1A], ASCII_TECLA_E
+      mov byte[__DIR_LINEAL_VIDEO + eax + 0x1B], 0x04  
+      mov byte[__DIR_LINEAL_VIDEO + eax + 0x1C], ASCII_TECLA_A
+      mov byte[__DIR_LINEAL_VIDEO + eax + 0x1D], 0x04  
+
+      mov byte[__DIR_LINEAL_VIDEO + eax + 0x1E], ASCII_TECLA_ESPACIO
+      mov byte[__DIR_LINEAL_VIDEO + eax + 0x1F], 0x04  
+
+      mov byte[__DIR_LINEAL_VIDEO + eax + 0x20], ASCII_TECLA_PUNTOS
+      mov byte[__DIR_LINEAL_VIDEO + eax + 0x21], 0x04    
+
+
+      mov byte[__DIR_LINEAL_VIDEO + eax + 0x22], ASCII_TECLA_0
+      mov byte[__DIR_LINEAL_VIDEO + eax + 0x23], 0x07  
+      mov byte[__DIR_LINEAL_VIDEO + eax + 0x24], ASCII_TECLA_x
+      mov byte[__DIR_LINEAL_VIDEO + eax + 0x25], 0x07
 
 
       NUMERO:
       mov bl , [_BUFFER_NUMERO_PANTALLA + ecx]                       ; Offset de columnas y filas arbitrario
-      mov byte[__DIR_LINEAL_VIDEO + eax + 0x04 +ecx*2], bl           ; Guardo cada letra en el buffer de salida
-      mov byte[__DIR_LINEAL_VIDEO + eax + 0x04 + ecx *2+ 0x01], 0x07 ; Guardo el color de la letra y fondo despues de cada letra
+      mov byte[__DIR_LINEAL_VIDEO + eax + 0x26 +ecx*2], bl           ; Guardo cada letra en el buffer de salida
+      mov byte[__DIR_LINEAL_VIDEO + eax + 0x26 + ecx *2+ 0x01], 0x07 ; Guardo el color de la letra y fondo despues de cada letra
       cmp ecx,0x10                                                   ; Cuento hasta 16 digitos y retorno
       jz FIN
       inc ecx

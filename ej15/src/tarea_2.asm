@@ -24,6 +24,7 @@ EXTERN ds_sel_32_usuario
 EXTERN ds_sel_32_nucleo
 
 
+%define cantidad_numeros 0xE00
 
 
 
@@ -33,46 +34,72 @@ section .text_tarea_2
 USE32
 
 TAREA_2:
-
+	 
+	 ;xchg bx, bx
      mov eax, 0x02
      mov ebx, _BUFFER_TABLA_TAREA_2
      mov ecx, 0xE00
+     ;xchg bx, bx
      int 0x80
 
 
-    mov eax, 0x00
-    mov edx, _BUFFER_TABLA_TAREA_2 + 0x10  ; Comienzo desde lel primero numero de la tabla
-    mov [_NUMERO_TOTAL_TAREA_2], eax                    ; Pongo en cero la parte baja de la suma total
-    mov [_NUMERO_TOTAL_TAREA_2 + 0x04], eax             ; Pongo en cero la parte alta de la suma total
 
+   mov eax, 0x02
+   mov ebx, _BUFFER_TABLA_TAREA_2
+   mov ecx, cantidad_numeros
+
+   int 0x80
+
+    ;xchg bx,bx
+
+    movdqu xmm0, [_BUFFER_TABLA_TAREA_2 + 0x10]         
+    mov edx, _BUFFER_TABLA_TAREA_2 + 0x20  				; Comienzo desde lel primero numero de la tabla
 
     LP:
-    cmp edx, _BUFFER_TABLA_TAREA_2 + 0xE00                     ; Chequeo si el puntero es siguiente numero de la tabla a cargar 
-    jz FIN                                ; Dejo de sumar y vuelvo
-    mov eax,[edx]                            
-    add [_NUMERO_TOTAL_TAREA_2], eax                    ; Sumo la parte baja del numero nuevo al total
-    mov eax,[edx+0x04]                          ; Copio la parte alta del numero nuevo
-    jc CARRY                                    ; Si la suma de la parte baja tiene carry lo sumo en la parte alta
-    jmp N_CARRY   
+    movdqu xmm1, [edx] 
+    paddw  xmm0, xmm1
+    cmp edx, _BUFFER_TABLA_TAREA_2 + cantidad_numeros 
+    je RESULTADO 
+    add edx , 0x10                              		; Corro el puntero al siguiente numero de la tabla
+	jmp LP
+
+	RESULTADO:
+	movdqu  [_NUMERO_TOTAL_TAREA_2], xmm0 
 
 
-
-    CARRY: 
-    add byte[_NUMERO_TOTAL_TAREA_2+0x04], 0x01          ; Caso de carry en la parte baja, lo sumo a la parte alta
-
-
-
-    N_CARRY:
-    add [_NUMERO_TOTAL_TAREA_2+0x04], eax               ; Sumo la parte alta del numero nuevo al total
-    add edx , 0x10                              ; Corro el puntero al siguiente numero de la tabla
-
-    jmp LP
-
+;    mov eax, 0x00
+;    mov edx, _BUFFER_TABLA_TAREA_2 + 0x10               ; Comienzo desde lel primero numero de la tabla
+;    mov [_NUMERO_TOTAL_TAREA_2], eax                    ; Pongo en cero la parte baja de la suma total
+;    mov [_NUMERO_TOTAL_TAREA_2 + 0x04], eax             ; Pongo en cero la parte alta de la suma total
+;
+;
+;    LP:
+;    cmp edx, _BUFFER_TABLA_TAREA_2 + 0xE00              ; Chequeo si el puntero es siguiente numero de la tabla a cargar 
+;    jz FIN                                              ; Dejo de sumar y vuelvo
+;    mov eax,[edx]                            
+;    add [_NUMERO_TOTAL_TAREA_2], eax                    ; Sumo la parte baja del numero nuevo al total
+;    mov eax,[edx+0x04]                                  ; Copio la parte alta del numero nuevo
+;    jc CARRY                                            ; Si la suma de la parte baja tiene carry lo sumo en la parte alta
+;    jmp N_CARRY   
+;
+;
+;
+;    CARRY: 
+;    add byte[_NUMERO_TOTAL_TAREA_2+0x04], 0x01          ; Caso de carry en la parte baja, lo sumo a la parte alta
+;
+;
+;
+;    N_CARRY:
+;    add [_NUMERO_TOTAL_TAREA_2+0x04], eax               ; Sumo la parte alta del numero nuevo al total
+;    add edx , 0x10                                      ; Corro el puntero al siguiente numero de la tabla
+;
+;    jmp LP
+;
     FIN:
     mov eax, 0x03
 
-    mov ebx, 0x60                           ; Guardo el valor de COLUMNAS  
-    mov ecx, 0x500                          ; Guardo el valor de FILAS
+    mov ebx, 0x60                                      ; Guardo el valor de COLUMNAS  
+    mov ecx, 0x600                                     ; Guardo el valor de FILAS
     mov edx, _NUMERO_TOTAL_TAREA_2
     int 0x80
 
@@ -86,7 +113,7 @@ TAREA_2:
 
 section .tss_tarea_2
 USE32
-
+ALIGN 16
 TSS_TAREA_2:
 
     _TSS_2_reservado:      resw 2 
@@ -118,6 +145,9 @@ TSS_TAREA_2:
     _TSS_2_reservado_ss:   resw 1
     _TSS_2_ds:             dw ds_sel_32_usuario
     _TSS_2_reservado_ds:   resw 1
+    _RESERVED:             resb 8
+    _TSS_2_simd:           resb 512
+
 
 
 ;-------------------------------------------------------------------------------------------------
