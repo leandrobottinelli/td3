@@ -1,0 +1,1 @@
+cmd_/home/leandro/td3/td3/tp2/driver/my_SPI.ko := arm-linux-gnueabihf-ld -EL -r  -T ./scripts/module-common.lds --build-id  -T ./arch/arm/kernel/module.lds -o /home/leandro/td3/td3/tp2/driver/my_SPI.ko /home/leandro/td3/td3/tp2/driver/my_SPI.o /home/leandro/td3/td3/tp2/driver/my_SPI.mod.o ;  true

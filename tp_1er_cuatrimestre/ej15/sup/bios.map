@@ -1,0 +1,363 @@
+
+Configuración de la Memoria
+
+Nombre           Origen             Longitud           Atributos
+ram              0x0000000000000000 0x00000000ffff0000 xrw
+rom_init         0x00000000ffff0000 0x000000000000fff0 xr
+rom_reset        0x00000000fffffff0 0x0000000000000010 xr
+*default*        0x0000000000000000 0xffffffffffffffff
+
+Guión del enlazador y mapa de memoria
+
+                0x0000000000000000                __DIR_FISICA_ISR = 0x0
+                0x00000000000b8000                __DIR_FISICA_VIDEO = 0xb8000
+                0x0000000000100000                __DIR_FISICA_SYS_TABLES = 0x100000
+                0x0000000000110000                __DIR_FISICA_PAGE_TABLES_0 = 0x110000
+                0x0000000000120000                __DIR_FISICA_PAGE_TABLES_1 = 0x120000
+                0x0000000000130000                __DIR_FISICA_PAGE_TABLES_2 = 0x130000
+                0x0000000000310000                __DIR_FISICA_TABLA_DIGITOS = 0x310000
+                0x0000000000500000                __DIR_FISICA_NUCLEO = 0x500000
+                0x0000000000510000                __DIR_FISICA_TEXT_TAREA_0 = 0x510000
+                0x0000000000511000                __DIR_FISICA_BSS_TAREA_0 = 0x511000
+                0x0000000000512000                __DIR_FISICA_DATA_TAREA_0 = 0x512000
+                0x0000000000520000                __DIR_FISICA_TEXT_TAREA_1 = 0x520000
+                0x0000000000521000                __DIR_FISICA_BSS_TAREA_1 = 0x521000
+                0x0000000000522000                __DIR_FISICA_DATA_TAREA_1 = 0x522000
+                0x0000000000530000                __DIR_FISICA_TEXT_TAREA_2 = 0x530000
+                0x0000000000531000                __DIR_FISICA_BSS_TAREA_2 = 0x531000
+                0x0000000000532000                __DIR_FISICA_DATA_TAREA_2 = 0x532000
+                0x00000000005e0000                __DIR_FISICA_DATOS = 0x5e0000
+                0x00000000005f0000                __DIR_FISICA_BSS = 0x5f0000
+                0x0000000000f00000                __DIR_FISICA_RUTINAS = 0xf00000
+                0x0000000008000000                __DIR_FISICA_PAGINAS_NO_PRESENTES = 0x8000000
+                0x0000000000513000                __DIR_FISICA_TSS_TAREA_0 = 0x513000
+                0x0000000000523000                __DIR_FISICA_TSS_TAREA_1 = 0x523000
+                0x0000000000533000                __DIR_FISICA_TSS_TAREA_2 = 0x533000
+                0x0000000000010000                __LONGITUD_TABLA_DIGITOS = 0x10000
+                0x0000000000010000                __DIR_LINEAL_VIDEO = 0x10000
+                0x000000001fffb000                __INICIO_PILA_NUCLEO = 0x1fffb000
+                0x0000000000001000                __SIZE_PILA_NUCLEO = 0x1000
+                0x000000001fffc000                __FIN_PILA_NUCLEO = (__INICIO_PILA_NUCLEO + __SIZE_PILA_NUCLEO)
+                0x0000000000614000                __INICIO_PILA_NUCLEO_TAREA_0 = 0x614000
+                0x0000000000001000                __SIZE_PILA_NUCLEO_TAREA_0 = 0x1000
+                0x0000000000615000                __FIN_PILA_NUCLEO_TAREA_0 = (__INICIO_PILA_NUCLEO_TAREA_0 + __SIZE_PILA_NUCLEO_TAREA_0)
+                0x000000001fff8000                __DIR_FISICA_PILA_NUCLEO_TAREA_0 = 0x1fff8000
+                0x0000000000614000                __INICIO_PILA_NUCLEO_TAREA_1 = 0x614000
+                0x0000000000001000                __SIZE_PILA_NUCLEO_TAREA_1 = 0x1000
+                0x0000000000615000                __FIN_PILA_NUCLEO_TAREA_1 = (__INICIO_PILA_NUCLEO_TAREA_1 + __SIZE_PILA_NUCLEO_TAREA_1)
+                0x000000001fff9000                __DIR_FISICA_PILA_NUCLEO_TAREA_1 = 0x1fff9000
+                0x0000000000614000                __INICIO_PILA_NUCLEO_TAREA_2 = 0x614000
+                0x0000000000001000                __SIZE_PILA_NUCLEO_TAREA_2 = 0x1000
+                0x0000000000615000                __FIN_PILA_NUCLEO_TAREA_2 = (__INICIO_PILA_NUCLEO_TAREA_2 + __SIZE_PILA_NUCLEO_TAREA_2)
+                0x000000001fffa000                __DIR_FISICA_PILA_NUCLEO_TAREA_2 = 0x1fffa000
+                0x0000000000613000                __INICIO_PILA_USUARIO_TAREA_0 = 0x613000
+                0x0000000000001000                __SIZE_PILA_USUARIO_TAREA_0 = 0x1000
+                0x0000000000614000                __FIN_PILA_USUARIO_TAREA_0 = (__INICIO_PILA_USUARIO_TAREA_0 + __SIZE_PILA_USUARIO_TAREA_0)
+                0x000000001fffc000                __DIR_FISICA_PILA_USUARIO_TAREA_0 = 0x1fffc000
+                0x0000000000613000                __INICIO_PILA_USUARIO_TAREA_1 = 0x613000
+                0x0000000000001000                __SIZE_PILA_USUARIO_TAREA_1 = 0x1000
+                0x0000000000614000                __FIN_PILA_USUARIO_TAREA_1 = (__INICIO_PILA_USUARIO_TAREA_1 + __SIZE_PILA_USUARIO_TAREA_1)
+                0x000000001fffd000                __DIR_FISICA_PILA_USUARIO_TAREA_1 = 0x1fffd000
+                0x0000000000613000                __INICIO_PILA_USUARIO_TAREA_2 = 0x613000
+                0x0000000000001000                __SIZE_PILA_USUARIO_TAREA_2 = 0x1000
+                0x0000000000614000                __FIN_PILA_USUARIO_TAREA_2 = (__INICIO_PILA_USUARIO_TAREA_2 + __SIZE_PILA_USUARIO_TAREA_2)
+                0x000000001fffe000                __DIR_FISICA_PILA_USUARIO_TAREA_2 = 0x1fffe000
+
+.iplt           0x0000000000000000        0x0
+ .iplt          0x0000000000000000        0x0 bin/copy.elf
+
+.init           0x00000000ffff0000     0x141c
+ *(.init)
+ .init          0x00000000ffff0000       0x86 bin/bios.elf
+ .init          0x00000000ffff0086       0x28 bin/pic.elf
+                0x00000000ffff0086                _pic_configure
+ .init          0x00000000ffff00ae       0x35 bin/pit.elf
+                0x00000000ffff00ae                _pit_configure
+ .init          0x00000000ffff00e3     0x1339 bin/pantalla_init.elf
+                0x00000000ffff11e2                pantalla_init
+                0x000000000000141c                __LONGITUD_INIT = SIZEOF (.init)
+
+.ISR            0x0000000000000000      0x350 dirección de carga 0x00000000ffff141c
+                0x0000000000000000                __INICIO_RAM_ISR = .
+                0x00000000ffff141c                __INICIO_ROM_ISR = LOADADDR (.ISR)
+ *(.rutinas_isr)
+ .rutinas_isr   0x0000000000000000      0x340 bin/rutinas_teclado_isr.elf
+                0x0000000000000006                isr0_handler_DE
+                0x000000000000000d                isr2_handler_NMI
+                0x0000000000000014                isr3_handler_BP
+                0x000000000000001b                isr4_handler_OF
+                0x0000000000000022                isr5_handler_BR
+                0x0000000000000029                isr6_handler_UD
+                0x0000000000000030                isr7_handler_NM
+                0x0000000000000041                isr8_handler_DF
+                0x0000000000000048                isr9_handler
+                0x000000000000004f                isr10_handler_TS
+                0x0000000000000056                isr11_handler_NP
+                0x000000000000005d                isr12_handler_SS
+                0x0000000000000064                isr13_handler_GP
+                0x000000000000006b                isr14_handler_PF
+                0x000000000000006d                isr15_handler
+                0x0000000000000074                isr16_handler_MF
+                0x000000000000007b                isr17_handler_AC
+                0x0000000000000085                isr18_handler_MC
+                0x000000000000008f                isr19_handler_XF
+                0x0000000000000099                isr32_handler_PIT
+                0x0000000000000278                isr33_handler_KEYBOARD
+                0x000000000000030e                isr80_handler_SYS_CALL
+ *(.rutina_lectura_teclado)
+ .rutina_lectura_teclado
+                0x0000000000000340       0x10 bin/rutinas_teclado_isr.elf
+                0x0000000000000348                LECTURA_TECLA
+                0x0000000000000350                __LONGITUD_ISR = SIZEOF (.ISR)
+
+.sys_tables     0x0000000000100000      0x444 dirección de carga 0x00000000ffff176c
+                0x0000000000100000                __INICIO_RAM_SYS_TABLES = .
+                0x00000000ffff176c                __INICIO_ROM_SYS_TABLES = LOADADDR (.sys_tables)
+ *(.sys_tables)
+ .sys_tables    0x0000000000100000      0x444 bin/sys_tables.elf
+                0x0000000000100030                img_gdtr_32
+                0x000000000010043e                img_idtr
+                0x0000000000000444                __LONGITUD_SYS_TABLES = SIZEOF (.sys_tables)
+
+.page_tables    0x0000000000110000        0x0 dirección de carga 0x00000000ffff1bb0
+                0x0000000000110000                __INICIO_RAM_PAGE_TABLES = .
+                0x00000000ffff1bb0                __INICIO_ROM_PAGE_TABLES = LOADADDR (.page_tables)
+ *(.page_tables)
+                0x0000000000000000                __LONGITUD_PAGE_TABLES = SIZEOF (.page_tables)
+
+.tabla_digitos  0x0000000000310000        0x0 dirección de carga 0x00000000ffff1bb0
+                0x0000000000310000                __INICIO_RAM_TABLA_DIGITOS = .
+                0x00000000ffff1bb0                __INICIO_ROM_TABLA_DIGITOS = LOADADDR (.tabla_digitos)
+ *(.Tabla_Digitos)
+
+.nucleo         0x0000000000500000      0x134 dirección de carga 0x00000000ffff1bb0
+                0x0000000000500000                __INICIO_RAM_NUCLEO = .
+                0x00000000ffff1bb0                __INICIO_ROM_NUCLEO = LOADADDR (.nucleo)
+ *(.nucleo)
+ .nucleo        0x0000000000500000      0x134 bin/bios.elf
+                0x0000000000000134                __LONGITUD_NUCLEO = SIZEOF (.nucleo)
+
+.text_tarea_0   0x0000000000610000        0x8 dirección de carga 0x00000000ffff1ce4
+                0x0000000000610000                __INICIO_RAM_TEXT_TAREA_0 = .
+                0x00000000ffff1ce4                __INICIO_ROM_TEXT_TAREA_0 = LOADADDR (.text_tarea_0)
+ *(.text_tarea_0)
+ .text_tarea_0  0x0000000000610000        0x8 bin/tarea_0.elf
+                0x0000000000610000                TAREA_0
+                0x0000000000000008                __LONGITUD_TEXT_TAREA_0 = SIZEOF (.text_tarea_0)
+
+.bss_tarea_0    0x0000000000611000        0x0 dirección de carga 0x00000000ffff1cec
+                0x0000000000611000                __INICIO_RAM_BSS_TAREA_0 = .
+                0x00000000ffff1cec                __INICIO_ROM_BSS_TAREA_0 = LOADADDR (.bss_tarea_0)
+ *(.bss_tarea_0)
+ .bss_tarea_0   0x0000000000611000        0x0 bin/tarea_0.elf
+                0x0000000000000000                __LONGITUD_BSS_TAREA_0 = SIZEOF (.bss_tarea_0)
+
+.data_tarea_0   0x0000000000612000        0x0 dirección de carga 0x00000000ffff1cec
+                0x0000000000612000                __INICIO_RAM_DATA_TAREA_0 = .
+                0x00000000ffff1cec                __INICIO_ROM_DATA_TAREA_0 = LOADADDR (.data_tarea_0)
+ *(.data_tarea_0)
+ .data_tarea_0  0x0000000000612000        0x0 bin/tarea_0.elf
+                0x0000000000000000                __LONGITUD_DATA_TAREA_0 = SIZEOF (.data_tarea_0)
+
+.text_tarea_1   0x0000000000610000       0x5a dirección de carga 0x00000000ffff1cec
+                0x0000000000610000                __INICIO_RAM_TEXT_TAREA_1 = .
+                0x00000000ffff1cec                __INICIO_ROM_TEXT_TAREA_1 = LOADADDR (.text_tarea_1)
+ *(.text_tarea_1)
+ .text_tarea_1  0x0000000000610000       0x5a bin/tarea_1.elf
+                0x0000000000610000                TAREA_1
+                0x000000000000005a                __LONGITUD_TEXT_TAREA_1 = SIZEOF (.text_tarea_1)
+
+.bss_tarea_1    0x0000000000611000       0x60 dirección de carga 0x00000000ffff1d46
+                0x0000000000611000                __INICIO_RAM_BSS_TAREA_1 = .
+                0x00000000ffff1d46                __INICIO_ROM_BSS_TAREA_1 = LOADADDR (.bss_tarea_1)
+ *(.bss_tarea_1)
+ .bss_tarea_1   0x0000000000611000       0x60 bin/tarea_1.elf
+                0x0000000000000060                __LONGITUD_BSS_TAREA_1 = SIZEOF (.bss_tarea_1)
+
+.data_tarea_1   0x0000000000612000        0x0 dirección de carga 0x00000000ffff1d46
+                0x0000000000612000                __INICIO_RAM_DATA_TAREA_1 = .
+                0x00000000ffff1d46                __INICIO_ROM_DATA_TAREA_1 = LOADADDR (.data_tarea_1)
+ *(.data_tarea_1)
+ .data_tarea_1  0x0000000000612000        0x0 bin/tarea_1.elf
+                0x0000000000000000                __LONGITUD_DATA_TAREA_1 = SIZEOF (.data_tarea_1)
+
+.text_tarea_2   0x0000000000610000       0x6b dirección de carga 0x00000000ffff1d46
+                0x0000000000610000                __INICIO_RAM_TEXT_TAREA_2 = .
+                0x00000000ffff1d46                __INICIO_ROM_TEXT_TAREA_2 = LOADADDR (.text_tarea_2)
+ *(.text_tarea_2)
+ .text_tarea_2  0x0000000000610000       0x6b bin/tarea_2.elf
+                0x0000000000610000                TAREA_2
+                0x000000000000006b                __LONGITUD_TEXT_TAREA_2 = SIZEOF (.text_tarea_2)
+
+.bss_tarea_2    0x0000000000611000       0x60 dirección de carga 0x00000000ffff1db1
+                0x0000000000611000                __INICIO_RAM_BSS_TAREA_2 = .
+                0x00000000ffff1db1                __INICIO_ROM_BSS_TAREA_2 = LOADADDR (.bss_tarea_2)
+ *(.bss_tarea_2)
+ .bss_tarea_2   0x0000000000611000       0x60 bin/tarea_2.elf
+                0x0000000000000060                __LONGITUD_BSS_TAREA_2 = SIZEOF (.bss_tarea_2)
+
+.data_tarea_2   0x0000000000612000        0x0 dirección de carga 0x00000000ffff1db1
+                0x0000000000612000                __INICIO_RAM_DATA_TAREA_2 = .
+                0x00000000ffff1db1                __INICIO_ROM_DATA_TAREA_2 = LOADADDR (.data_tarea_2)
+ *(.data_tarea_2)
+ .data_tarea_2  0x0000000000612000        0x0 bin/tarea_2.elf
+                0x0000000000000000                __LONGITUD_DATA_TAREA_2 = SIZEOF (.data_tarea_2)
+
+.TSS_TAREA_0    0x0000000000620000      0x260 dirección de carga 0x00000000ffff1db1
+                0x0000000000620000                __INICIO_RAM_TSS_TAREA_0 = .
+                0x00000000ffff1db1                __INICIO_ROM_TSS_TAREA_0 = LOADADDR (.TSS_TAREA_0)
+ *(.tss_tarea_0)
+ .tss_tarea_0   0x0000000000620000      0x260 bin/tarea_0.elf
+                0x0000000000620000                TSS_TAREA_0
+                0x0000000000620020                _TSS_0_eip
+                0x0000000000620024                _TSS_0_eflags
+                0x0000000000620028                _TSS_0_eax
+                0x000000000062002c                _TSS_0_ecx
+                0x0000000000620030                _TSS_0_edx
+                0x0000000000620034                _TSS_0_ebx
+                0x0000000000620038                _TSS_0_esp
+                0x000000000062003c                _TSS_0_ebp
+                0x0000000000620040                _TSS_0_esi
+                0x0000000000620044                _TSS_0_edi
+                0x0000000000620048                _TSS_0_es
+                0x000000000062004c                _TSS_0_cs
+                0x0000000000620050                _TSS_0_ss
+                0x0000000000620054                _TSS_0_ds
+                0x0000000000620060                _TSS_0_simd
+                0x0000000000000260                __LONGITUD_TSS_TAREA_0 = SIZEOF (.TSS_TAREA_0)
+
+.TSS_TAREA_1    0x0000000000620000      0x260 dirección de carga 0x00000000ffff2011
+                0x0000000000620000                __INICIO_RAM_TSS_TAREA_1 = .
+                0x00000000ffff2011                __INICIO_ROM_TSS_TAREA_1 = LOADADDR (.TSS_TAREA_1)
+ *(.tss_tarea_1)
+ .tss_tarea_1   0x0000000000620000      0x260 bin/tarea_1.elf
+                0x0000000000620000                TSS_TAREA_1
+                0x0000000000620020                _TSS_1_eip
+                0x0000000000620024                _TSS_1_eflags
+                0x0000000000620028                _TSS_1_eax
+                0x000000000062002c                _TSS_1_ecx
+                0x0000000000620030                _TSS_1_edx
+                0x0000000000620034                _TSS_1_ebx
+                0x0000000000620038                _TSS_1_esp
+                0x000000000062003c                _TSS_1_ebp
+                0x0000000000620040                _TSS_1_esi
+                0x0000000000620044                _TSS_1_edi
+                0x0000000000620048                _TSS_1_es
+                0x000000000062004c                _TSS_1_cs
+                0x0000000000620050                _TSS_1_ss
+                0x0000000000620054                _TSS_1_ds
+                0x0000000000620060                _TSS_1_simd
+                0x0000000000000260                __LONGITUD_TSS_TAREA_1 = SIZEOF (.TSS_TAREA_1)
+
+.TSS_TAREA_2    0x0000000000620000      0x260 dirección de carga 0x00000000ffff2271
+                0x0000000000620000                __INICIO_RAM_TSS_TAREA_2 = .
+                0x00000000ffff2271                __INICIO_ROM_TSS_TAREA_2 = LOADADDR (.TSS_TAREA_2)
+ *(.tss_tarea_2)
+ .tss_tarea_2   0x0000000000620000      0x260 bin/tarea_2.elf
+                0x0000000000620000                TSS_TAREA_2
+                0x0000000000620020                _TSS_2_eip
+                0x0000000000620024                _TSS_2_eflags
+                0x0000000000620028                _TSS_2_eax
+                0x000000000062002c                _TSS_2_ecx
+                0x0000000000620030                _TSS_2_edx
+                0x0000000000620034                _TSS_2_ebx
+                0x0000000000620038                _TSS_2_esp
+                0x000000000062003c                _TSS_2_ebp
+                0x0000000000620040                _TSS_2_esi
+                0x0000000000620044                _TSS_2_edi
+                0x0000000000620048                _TSS_2_es
+                0x000000000062004c                _TSS_2_cs
+                0x0000000000620050                _TSS_2_ss
+                0x0000000000620054                _TSS_2_ds
+                0x0000000000000260                __LONGITUD_TSS_TAREA_2 = SIZEOF (.TSS_TAREA_2)
+
+.datos          0x00000000005e0000       0x10 dirección de carga 0x00000000ffff24d1
+                0x00000000005e0000                __INICIO_RAM_DATOS = .
+                0x00000000ffff24d1                __INICIO_ROM_DATOS = LOADADDR (.datos)
+ *(.datos)
+ .datos         0x00000000005e0000       0x10 bin/bios.elf
+                0x00000000005e0000                _ENTRADA_TABLA
+                0x00000000005e0008                _CONTADOR_TAREA_2
+                0x0000000000000010                __LONGITUD_DATOS = SIZEOF (.datos)
+
+.bss            0x00000000005f0000       0x80 dirección de carga 0x00000000ffff24e1
+                0x00000000005f0000                __INICIO_RAM_BSS = .
+                0x00000000ffff24e1                __INICIO_ROM_BSS = LOADADDR (.bss)
+ *(.bss)
+ .bss           0x00000000005f0000       0x80 bin/bios.elf
+                0x00000000005f0000                _CONTADOR_TECLAS
+                0x00000000005f0008                _CONTADOR_TECLAS_BYTES
+                0x00000000005f0010                _flag_int_teclado
+                0x00000000005f0018                _flag_16_TECLAS
+                0x00000000005f0020                _flag_int_timer
+                0x00000000005f0028                _CONTADOR_TIMER
+                0x00000000005f0038                _NUMERO_TOTAL
+                0x00000000005f0048                _FALLO_PAGINA_NUMERO
+                0x00000000005f0050                _CONTADOR_PAGINAS_NO_PRESENTES
+                0x00000000005f0058                _CONTADOR_TAREA_1
+                0x00000000005f0060                _TAREA_ACTUAL
+                0x00000000005f0068                _TAREA_FUTURA
+                0x00000000005f0070                _CONTADOR_TABLAS_PAGINAS
+                0x00000000005f0078                _BUFFER_NUMERO_PANTALLA
+                0x0000000000000080                __LONGITUD_BSS = SIZEOF (.bss)
+
+.rutinas        0x0000000000f00000      0x702 dirección de carga 0x00000000ffff24e1
+                0x0000000000f00000                __INICIO_RAM_RUTINAS = .
+                0x00000000ffff24e1                __INICIO_ROM_RUTINAS = LOADADDR (.rutinas)
+ bin/copy.elf(.copy)
+ .copy          0x0000000000f00000       0x15 bin/copy.elf
+                0x0000000000f00000                COPY_INIT
+                0x0000000000f0000b                COPY_CICLO
+ *(.rutinas)
+ .rutinas       0x0000000000f00015       0xe7 bin/rutinas.elf
+                0x0000000000f00015                CARGAR_TABLA
+                0x0000000000f00045                CARGAR_TABLA_2
+ .rutinas       0x0000000000f000fc      0x1f3 bin/pantalla.elf
+                0x0000000000f000fc                MOSTRAR_PANTALLA
+ .rutinas       0x0000000000f002ef      0x413 bin/page.elf
+                0x0000000000f002ef                PAGINACION_INIT
+                0x0000000000f00682                PAGINACION
+                0x0000000000000702                __LONGITUD_RUTINAS = SIZEOF (.rutinas)
+
+.reset          0x00000000fffffff0       0x10
+ *(.reset)
+ .reset         0x00000000fffffff0       0x10 bin/bios.elf
+LOAD bin/bios.elf
+LOAD bin/copy.elf
+LOAD bin/rutinas_teclado_isr.elf
+LOAD bin/rutinas.elf
+LOAD bin/sys_tables.elf
+LOAD bin/pic.elf
+LOAD bin/pit.elf
+LOAD bin/pantalla_init.elf
+LOAD bin/pantalla.elf
+LOAD bin/page.elf
+LOAD bin/tarea_0.elf
+LOAD bin/tarea_1.elf
+LOAD bin/tarea_2.elf
+OUTPUT(bin/rom.elf elf32-i386)
+
+.got            0x0000000100000000        0x0
+ .got           0x0000000100000000        0x0 bin/copy.elf
+
+.got.plt        0x0000000100000000        0x0
+ .got.plt       0x0000000100000000        0x0 bin/copy.elf
+
+.igot.plt       0x0000000100000000        0x0
+ .igot.plt      0x0000000100000000        0x0 bin/copy.elf
+
+.rel.dyn        0x0000000100000000        0x0
+ .rel.got       0x0000000100000000        0x0 bin/copy.elf
+ .rel.iplt      0x0000000100000000        0x0 bin/copy.elf
+ .rel.init      0x0000000100000000        0x0 bin/copy.elf
+ .rel.nucleo    0x0000000100000000        0x0 bin/copy.elf
+ .rel.datos     0x0000000100000000        0x0 bin/copy.elf
+ .rel.rutinas_isr
+                0x0000000100000000        0x0 bin/copy.elf
+ .rel.rutinas   0x0000000100000000        0x0 bin/copy.elf
+ .rel.tss_tarea_0
+                0x0000000100000000        0x0 bin/copy.elf
+ .rel.tss_tarea_1
+                0x0000000100000000        0x0 bin/copy.elf
+ .rel.tss_tarea_2
+                0x0000000100000000        0x0 bin/copy.elf
